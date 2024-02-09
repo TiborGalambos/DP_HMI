@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 HOST = 'localhost'
 PORT = 65432
-route_button = None
+home_route_button = None
 import psycopg2
 
 conn = psycopg2.connect(
@@ -34,6 +34,29 @@ def send_message(route):
     with socket.create_connection((HOST, PORT)) as sock:
         sock.sendall(xml_message)
 
+def fetch_stops_for_route(trip_name):
+    try:
+        cursor = conn.cursor()
+        query = """
+        SELECT
+            s.name,
+            sch.arrival_time
+        FROM
+            Schedules sch
+            JOIN Stops s ON sch.stop_id = s.stop_id
+            JOIN Trips t ON sch.trip_id = t.trip_id
+        WHERE
+            t.trip_name = %s
+        ORDER BY
+            sch.arrival_time;
+        """
+        cursor.execute(query, (trip_name,))
+        stops = cursor.fetchall()
+        cursor.close()
+        return stops
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return []
 
 def fetch_routes():
     try:
@@ -88,18 +111,22 @@ def fetch_routes():
         return []
 
 def route_selected(trip_name, route_window):
-    global route_button  # Reference the global variable
-
+    global route_button
     print(f"Selected route: {trip_name}")
     # Here you can fetch and display stops for the selected route or send a message as needed
 
     route_window.destroy()  # Close the current route selection window
 
-    if route_button:  # Check if the first button has been initialized
-        route_button.config(text=f"Selected: {trip_name}")  # Update the first button's text
+    if home_route_button:  # Check if the first button has been initialized
+        home_route_button.configure(text=f"Selected: {trip_name}")  # Update the first button's text
+
+    stops = fetch_stops_for_route(trip_name)
+    # You can now display these stops or send them in a message as required
+    for stop in stops:
+        print(stop)  # Example of printing each stop
 
 def create_route_buttons(routes):
-    global route_button  # Reference the global variable
+    global home_route_button  # Reference the global variable
 
     route_window = tk.Tk()
     route_window.title("Select a Route")
@@ -142,8 +169,8 @@ if __name__ == "__main__":
     root.geometry("400x300")  # Adjust the size of the main window
 
     # Create the route picker button on the main window
-    route_button = tk.Button(root, text="Pick a Route", height=3, width=20, command=pick_route)
-    route_button.pack(pady=10)  # Add some padding for visual separation
+    home_route_button = tk.Button(root, text="Pick a Route", height=3, width=20, command=pick_route)
+    home_route_button.pack(pady=10)  # Add some padding for visual separation
 
     # Create three dummy buttons on the main window
     for i in range(1, 4):
