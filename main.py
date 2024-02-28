@@ -1,7 +1,10 @@
 import socket
-import tkinter as tk
-from tkinter import simpledialog
+# import tkinter as tk
 import xml.etree.ElementTree as ET
+
+from AppMainLayout import AppMainLayout
+
+# from AppMainLayout import AppMainLayout
 
 HOST = 'localhost'
 PORT = 65432
@@ -16,23 +19,6 @@ conn = psycopg2.connect(
 )
 
 
-def create_xml_message(route):
-    # Create the root element
-    root = ET.Element("data")
-
-    # Create a child element
-    message = ET.SubElement(root, "route")
-    message.text = f"{route}"
-
-    # Convert the XML tree to a string
-    xml_str = ET.tostring(root, encoding='utf8', method='xml')
-    return xml_str
-
-
-def send_message(route):
-    xml_message = create_xml_message(route)
-    with socket.create_connection((HOST, PORT)) as sock:
-        sock.sendall(xml_message)
 
 def fetch_stops_for_route(trip_name):
     try:
@@ -57,6 +43,7 @@ def fetch_stops_for_route(trip_name):
     except Exception as e:
         print(f"An error occurred: {e}")
         return []
+
 
 def fetch_routes():
     try:
@@ -110,6 +97,29 @@ def fetch_routes():
         print(f"An error occurred: {e}")
         return []
 
+
+def print_stops(stops):
+    for stop, time in stops:
+        # Example processing: print each stop and time
+        print(f"Stop: {stop}, Time: {time.strftime('%H:%M')}")
+
+
+def create_xml_message(stops):
+    root = ET.Element('stops')
+    for stop, time in stops:
+        stop_element = ET.SubElement(root, 'stop')
+        stop_element.set('name', stop)
+        stop_element.set('time', time.strftime('%H:%M'))
+    return ET.tostring(root, encoding='utf8', method='xml')
+
+
+def send_message_all_stops(stops):
+    xml_message = create_xml_message(stops)
+    print(xml_message)  # For demonstration purposes
+    with socket.create_connection((HOST, PORT)) as sock:
+        sock.sendall(xml_message)  # xml_message is already a bytes object
+
+
 def route_selected(trip_name, route_window):
     global route_button
     print(f"Selected route: {trip_name}")
@@ -121,9 +131,10 @@ def route_selected(trip_name, route_window):
         home_route_button.configure(text=f"Selected: {trip_name}")  # Update the first button's text
 
     stops = fetch_stops_for_route(trip_name)
-    # You can now display these stops or send them in a message as required
-    for stop in stops:
-        print(stop)  # Example of printing each stop
+
+    print_stops(stops)
+    send_message_all_stops(stops)
+
 
 def create_route_buttons(routes):
     global home_route_button  # Reference the global variable
@@ -157,24 +168,29 @@ def dummy_action():
     # Placeholder function for dummy buttons
     print("Dummy action")
 
+import customtkinter as ckt
+
 if __name__ == "__main__":
+    app = AppMainLayout()
+    app.mainloop()
 
-    conn = psycopg2.connect("dbname=postgres user=postgres password=postgres")
-    cur = conn.cursor()
+# if __name__ == "__main__":
+#     conn = psycopg2.connect("dbname=postgres user=postgres password=postgres")
+#     cur = conn.cursor()
+#
+#     # Initialize the main Tkinter window
+#     root = tk.Tk()
+#     root.title("HMI Interface")
+#     root.geometry("400x300")  # Adjust the size of the main window
+#
+#     # Create the route picker button on the main window
+#     home_route_button = tk.Button(root, text="Pick a Route", height=3, width=20, command=pick_route)
+#     home_route_button.pack(pady=10)  # Add some padding for visual separation
+#
+#     # Create three dummy buttons on the main window
+#     for i in range(1, 4):
+#         dummy_button = tk.Button(root, text=f"Dummy Button {i}", height=3, width=20, command=dummy_action)
+#         dummy_button.pack(pady=10)
+#
+#     root.mainloop()
 
-
-    # Initialize the main Tkinter window
-    root = tk.Tk()
-    root.title("HMI Interface")
-    root.geometry("400x300")  # Adjust the size of the main window
-
-    # Create the route picker button on the main window
-    home_route_button = tk.Button(root, text="Pick a Route", height=3, width=20, command=pick_route)
-    home_route_button.pack(pady=10)  # Add some padding for visual separation
-
-    # Create three dummy buttons on the main window
-    for i in range(1, 4):
-        dummy_button = tk.Button(root, text=f"Dummy Button {i}", height=3, width=20, command=dummy_action)
-        dummy_button.pack(pady=10)
-
-    root.mainloop()
