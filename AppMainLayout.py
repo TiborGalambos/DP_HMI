@@ -2,6 +2,7 @@ import time
 
 import customtkinter as ctk
 
+from DatabaseManager import DatabaseManager
 from PageController import PageController
 from SubPage5 import SubPage5
 from SubPage4 import SubPage4
@@ -40,11 +41,13 @@ class AppMainLayout(ctk.CTk, PageController):
 
         self.navigation_bar_container()
 
+        self.db_manager = DatabaseManager()
+
     def fullscreen(self):
         if (fullscreen_mode):
             self.attributes("-fullscreen", True)
         else:
-            self.geometry('1300x900')
+            self.geometry('1280x800')
 
     def navigation_bar_container(self):
         # Navigation bar
@@ -54,7 +57,7 @@ class AppMainLayout(ctk.CTk, PageController):
         self.nav_bar.grid_columnconfigure(index=0, weight=1)
         self.nav_bar.grid(row=2, column=0, sticky='s')
         self.page_controller = PageController(self.pages, controller=self)
-        self.page_controller.show_page("MainPage", self.header_label)
+        self.page_controller.show_page("SubPage1", self.header_label)
 
     def pages_container(self):
         # Container for all pages

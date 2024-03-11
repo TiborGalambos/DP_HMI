@@ -91,7 +91,7 @@ def fetch_routes():
         cursor.execute(query)
         routes = cursor.fetchall()
         cursor.close()
-        # conn.close()
+        conn.close()
         return routes
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -173,6 +173,8 @@ import customtkinter as ckt
 if __name__ == "__main__":
     app = AppMainLayout()
     app.mainloop()
+
+    print()
 
 # if __name__ == "__main__":
 #     conn = psycopg2.connect("dbname=postgres user=postgres password=postgres")
