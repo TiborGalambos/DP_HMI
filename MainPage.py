@@ -3,7 +3,7 @@ import customtkinter as ctk
 from PageController import PageController
 
 
-class MainPage(ctk.CTkFrame, PageController):
+class MainPage(ctk.CTkFrame):
 
     def __init__(self, master, controller):
         super().__init__(master)
@@ -31,8 +31,8 @@ class MainPage(ctk.CTkFrame, PageController):
         col_num = 0
         row_num = 0
         for text, page_name in self.buttons_info.items():
-            button = ctk.CTkButton(self, text=text, command=lambda name=page_name: controller.show_page(name, controller.header_label))
-            button.configure(font=("Arial", 12))
+            button = ctk.CTkButton(self, text=text, command=lambda name=page_name: controller.show_page(name, self.controller.header_label))
+            button.configure(font=("Arial", 20))
 
             button.grid(row=row_num, column=col_num, sticky='nsew', padx = 50, pady = 50)
 
