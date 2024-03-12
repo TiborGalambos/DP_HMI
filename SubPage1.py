@@ -47,7 +47,7 @@ class SubPage1(ctk.CTkFrame):
         # Scrollable container for routes
         self.routes_container = ctk.CTkFrame(self)
         self.routes_container.grid(row=0, column=0, sticky="nsew", padx=50, pady=50)
-        self.routes_canvas = tk.Canvas(self.routes_container)
+        self.routes_canvas = tk.Canvas(self.routes_container, bg='#2b2b2b')
         self.routes_scrollbar = ttk.Scrollbar(self.routes_container, orient="vertical",
                                               command=self.routes_canvas.yview)
         self.scrollable_frame = ttk.Frame(self.routes_canvas)
@@ -65,12 +65,13 @@ class SubPage1(ctk.CTkFrame):
         self.selected_route_label.pack(pady=10)
 
         self.populate_routes()
+        self.add_scroll_by_dragging()
 
     def populate_routes(self):
         route_data = self.db_manager.fetch_routes()
 
         for route in route_data:
-            route_frame = ttk.Frame(self.scrollable_frame, borderwidth=30, relief="ridge")
+            route_frame = ttk.Frame(self.scrollable_frame)
             route_frame.pack(pady=10, padx=10, fill="x", expand=True)
 
             route_number_label = ttk.Label(route_frame, text=route[0], font=('Arial', 30, 'bold'))
@@ -95,7 +96,42 @@ class SubPage1(ctk.CTkFrame):
 
             # Here is the corrected line with the default argument in the lambda function
             route_frame.bind("<Button-1>", lambda e, r=route: self.select_route(r))
+            self.routes_canvas.bind_all("<MouseWheel>", self.on_mousewheel)
+
+            if route != route_data[-1]:  # Check if not the last route
+                separator = ttk.Separator(self.scrollable_frame, orient='horizontal')
+                separator.pack(fill='x', padx=10, pady=5)
 
     def select_route(self, route):
         self.selected_route_label.configure(
             text=f"Selected Route: {route[0]}\nFrom: {route[1]} To: {route[2]}\nDeparture: {route[3]} Arrival: {route[4]}")
+
+    def on_mousewheel(self, event):
+        # The following factor 120 is typically used on Windows to normalize the event.delta.
+        # On MacOS, you might need to use 1 instead of 120. For Linux, you will use the event.num.
+        scroll_step = -1 * (event.delta // 120)
+        self.routes_canvas.yview_scroll(scroll_step, "units")
+
+    def add_scroll_by_dragging(self):
+        self.canvas_last_y = 0
+        self.canvas_scroll_start_y = 0
+
+        self.routes_canvas.bind("<ButtonPress-1>", self.start_drag)
+        self.routes_canvas.bind("<B1-Motion>", self.dragging)
+        self.routes_canvas.bind("<ButtonRelease-1>", self.stop_drag)
+
+    def start_drag(self, event):
+        self.canvas_scroll_start_y = event.y
+        self.canvas_last_y = event.y
+
+    def dragging(self, event):
+        delta_y = event.y - self.canvas_last_y
+        self.routes_canvas.yview_scroll(int(-delta_y / 50),
+                                        "units")  # The division factor can be adjusted for smoother scrolling
+        self.canvas_last_y = event.y
+
+    def stop_drag(self, event):
+        self.canvas_last_y = 0
+        self.canvas_scroll_start_y = 0
+
+    # For Windows and MacOS
