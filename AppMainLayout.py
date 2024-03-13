@@ -1,6 +1,7 @@
 import time
 
 import customtkinter as ctk
+from screeninfo import get_monitors
 
 from DatabaseManager import DatabaseManager
 from PageController import PageController
@@ -10,7 +11,7 @@ from SubPage3 import SubPage3
 from SubPage2 import SubPage2
 from SubPage1 import SubPage1
 from MainPage import MainPage
-
+from PIL import Image
 fullscreen_mode = False
 
 
@@ -19,6 +20,7 @@ class AppMainLayout(ctk.CTk, PageController):
     def __init__(self):
         super().__init__()
 
+        self.icons = list()
         self.page_display_names = {
             "Výber aplikácie": "MainPage",
             "Výber trasy": "SubPage1",
@@ -30,7 +32,6 @@ class AppMainLayout(ctk.CTk, PageController):
 
         self.title('HMI')
 
-        self.fullscreen()
 
         self.grid_rowconfigure(0, weight=0)  # Header row should not expand
         self.grid_rowconfigure(1, weight=1)  # Content row should expand
@@ -43,11 +44,36 @@ class AppMainLayout(ctk.CTk, PageController):
 
         self.db_manager = DatabaseManager()
 
-    def fullscreen(self):
-        if (fullscreen_mode):
-            self.attributes("-fullscreen", True)
+        self.maximize_window()
+
+        self.load_icons()
+
+    def get_icons(self):
+        return self.icons
+
+    def maximize_window(self):
+        self.update_idletasks()
+        self.update()
+        self.state('zoomed')
+
+    def open_fullscreen_on_second_monitor(self):
+        monitors = get_monitors()
+
+        if len(monitors) > 1:
+            second_monitor = monitors[0]  # Assuming the second monitor is the target
+            self.geometry(f"{second_monitor.width}x{second_monitor.height}+{second_monitor.x}+{second_monitor.y}")
+            # self.update_idletasks()  # Update the window state to ensure it has moved
+            print(f"{second_monitor.width}x{second_monitor.height}")
+            # self.attributes("-fullscreen", True)
         else:
-            self.geometry('1280x800')
+            print("Only one monitor detected. Opening fullscreen on the primary monitor.")
+            self.attributes("-fullscreen", True)
+
+    # def fullscreen(self):
+    #     if (fullscreen_mode):
+    #         self.attributes("-fullscreen", True)
+    #     else:
+    #         self.geometry('1280x800')
 
     def navigation_bar_container(self):
         # Navigation bar
@@ -90,32 +116,62 @@ class AppMainLayout(ctk.CTk, PageController):
         self.header_frame.grid_columnconfigure(2, minsize=fixed_size)  # Fixed size for column 2
 
         # Left label with dummy text
-        self.dummy_label = ctk.CTkLabel(self.header_frame, text="Trasa 0000", padx=10)
+        self.dummy_label = ctk.CTkLabel(self.header_frame, text="Trasa nezvolená", padx=20, font=('Arial', 26, 'bold'))
         self.dummy_label.grid(row=0, column=0, sticky='w')
 
         # Center label for page name
-        self.header_label = ctk.CTkLabel(self.header_frame, text="", font=('Arial', 26, 'bold'))
+        self.header_label = ctk.CTkLabel(self.header_frame, text="", font=('Arial', 35, 'bold'))
         self.header_label.grid(row=0, column=1, sticky='news')
 
-        # Right label for date and time
-        self.datetime_label = ctk.CTkLabel(self.header_frame, text="", padx=10)
-        self.datetime_label.grid(row=0, column=2, sticky='e')
+        # Right frame for date and time labels
+        self.datetime_frame = ctk.CTkFrame(self.header_frame)
+        self.datetime_frame.grid(row=0, column=2, sticky='e')
+
+        # Time label with larger font
+        self.time_label = ctk.CTkLabel(self.datetime_frame, text="", font=('Arial', 35, 'bold'), padx=10)
+        self.time_label.grid(row=0, column=0, sticky='news')
+
+        # Date label with smaller font
+        self.date_label = ctk.CTkLabel(self.datetime_frame, text="", font=('Arial', 20), padx=10)
+        self.date_label.grid(row=1, column=0, sticky='news')
+
         self.update_datetime()
 
     def update_datetime(self):
         '''Update the date and time display'''
-        current_time = time.strftime('%d.%m.%Y - %H:%M:%S')
-        self.datetime_label.configure(text=current_time, font=('Arial', 16, 'bold'))
+        current_time = time.strftime('%H:%M:%S')
+        current_date = time.strftime('%d.%m.%Y')
+        self.time_label.configure(text=current_time)
+        self.date_label.configure(text=current_date)
         # Schedule the `update_datetime` method to be called after 1000ms
         self.after(1000, self.update_datetime)
 
     def create_nav_bar(self):
         button_size = 100
         col_num = 0
+
+        icon_size = (200, 200)
+
+
+
+
+        self.icons = self.get_icons()
+
         for text, page_name in self.page_display_names.items():
-            button = ctk.CTkButton(self.nav_bar, text=text, command=lambda name=page_name: self.page_controller.show_page(name, self.header_label))
-            button.configure(font=("Arial", 12), width=button_size, height=button_size)
+            button = ctk.CTkButton(self.nav_bar, text="", image=self.icons[col_num], command=lambda name=page_name: self.page_controller.show_page(name, self.header_label))
+            button.image = self.icons[col_num]
+            button.configure(font=("Arial", 15), width=button_size, height=button_size)
             button.grid(row=0, column=col_num, padx=50, pady=50, sticky="ew")
 
             self.nav_bar.grid_columnconfigure(col_num, minsize=button_size)
             col_num += 1  # Increment counter for each button
+
+    def load_icons(self):
+        home_icon = ctk.CTkImage(dark_image=Image.open("icons/navigation_bar/menu_icon.png"), size=(50, 50))
+        route_icon = ctk.CTkImage(Image.open("icons/navigation_bar/route_icon.png"), size=(50, 50))
+        drive_icon = ctk.CTkImage(Image.open("icons/navigation_bar/drive_icon.png"), size=(50, 50))
+        text_icon = ctk.CTkImage(Image.open("icons/navigation_bar/message_icon.png"), size=(50, 50))
+        diagnostics_icon = ctk.CTkImage(Image.open("icons/navigation_bar/diagnostics_icon.png"), size=(50, 50))
+        settings_icon = ctk.CTkImage(Image.open("icons/navigation_bar/settings_icon.png"), size=(50, 50))
+
+        self.icons = [home_icon, route_icon, drive_icon, text_icon, diagnostics_icon, settings_icon]

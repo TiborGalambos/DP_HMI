@@ -1,137 +1,123 @@
-import datetime
-from tkinter import Canvas, Scrollbar
 
-import customtkinter as ctk
 from DatabaseManager import DatabaseManager
+from PIL import Image
 
-
-# Vyber trasy Page
-# class SubPage1(ctk.CTkFrame):
-#     def __init__(self, master, controller):
-#         super().__init__(master)
-#         # master.grid_columnconfigure(0, weight=1)
-#         # master.grid_rowconfigure(0, weight=1)
-#         self.controller = controller
-#
-#         self.grid_columnconfigure(0, weight=1)
-#         self.grid_columnconfigure(index=1, weight=2)
-#
-#         self.routes_container = ctk.CTkFrame(self)
-#         self.routes_container.grid(row=0, column=0, sticky="nsew", padx = 50, pady = 50)
-#
-#
-#         self.selected_route_container = ctk.CTkFrame(self)
-#         self.selected_route_container.grid(row=0, column=1, sticky="nsew", padx = 50, pady = 50)
-#
-#
-#         self.label1 = ctk.CTkLabel(self.routes_container, text="box 1")
-#         self.label1.grid(row=0, column=0)
-#         self.label2 = ctk.CTkLabel(self.selected_route_container, text="box 2")
-#         self.label2.grid(row=0, column=1)
-
-import tkinter as tk
-from tkinter import ttk
 import customtkinter as ctk
-
 
 class SubPage1(ctk.CTkFrame):
     def __init__(self, master, controller):
         super().__init__(master)
-
         self.db_manager = DatabaseManager()
         self.controller = controller
+        self.current_index = 0  # Keep track of the current index of the displayed route
+        self.max_display = 8  # Maximum number of routes to display at a time
+
+        # Configure grid for the whole page
         self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=4)
-        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=2)
 
-        # Scrollable container for routes
-        self.routes_container = ctk.CTkFrame(self)
-        self.routes_container.grid(row=0, column=0, sticky="nsew", padx=50, pady=50)
-        self.routes_canvas = tk.Canvas(self.routes_container, bg='#2b2b2b')
-        self.routes_scrollbar = ttk.Scrollbar(self.routes_container, orient="vertical",
-                                              command=self.routes_canvas.yview)
-        self.scrollable_frame = ttk.Frame(self.routes_canvas)
-        self.scrollable_frame.bind("<Configure>",
-                                   lambda e: self.routes_canvas.configure(scrollregion=self.routes_canvas.bbox("all")))
-        self.routes_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.routes_canvas.configure(yscrollcommand=self.routes_scrollbar.set)
-        self.routes_canvas.pack(side="left", fill="both", expand=True)
-        self.routes_scrollbar.pack(side="right", fill="y")
+        self.grid_rowconfigure(index=0, weight=1)
 
-        # Container for selected route details
-        self.selected_route_container = ctk.CTkFrame(self)
-        self.selected_route_container.grid(row=0, column=1, sticky="nsew", padx=50, pady=50)
-        self.selected_route_label = ctk.CTkLabel(self.selected_route_container, text="Select route")
-        self.selected_route_label.pack(pady=10)
+        # Left side container for the list and buttons
+        self.list_container = ctk.CTkFrame(self)
+        self.list_container.grid(row=0, column=0, sticky="nws", padx=(20, 10), pady=20)
+        self.list_container.grid_columnconfigure(0, weight=1)
+        self.list_container.grid_rowconfigure(1, weight=1)
+
+        # Right side container for selected route details
+        self.details_container = ctk.CTkFrame(self)
+
+        self.details_container.grid(row=0, column=1, sticky="nsew", padx=(10, 20), pady=20)
+        self.details_container.grid_columnconfigure(0, weight=1)
+
+        # Load the image (assuming it's in the same directory as your script)
+        arrow_up = Image.open("icons/arrows/arrow_up.png")  # Replace 'your_image.png' with your image file
+        arrow_up = arrow_up.resize((100, 100),
+                                   Image.Resampling.LANCZOS)  # Resize the image to fit the button, if necessary
+        arrow_up_icon = ctk.CTkImage(arrow_up)
+
+        # Navigation buttons
+        self.up_button = ctk.CTkButton(self.list_container, text="", command=self.scroll_up, image=arrow_up_icon)
+        self.up_button.image = arrow_up_icon
+        self.up_button.grid(row=0, column=0, sticky="ew", padx=20, pady=(0, 10), ipady = 20)
+
+        arrow_down = Image.open("icons/arrows/arrow_down.png")  # Replace 'your_image.png' with your image file
+        arrow_down = arrow_down.resize((25, 25),
+                                   Image.Resampling.LANCZOS)  # Resize the image to fit the button, if necessary
+        arrow_down_icon = ctk.CTkImage(arrow_down, size=(25, 25))
+
+        self.down_button = ctk.CTkButton(self.list_container, text="", command=self.scroll_down, image=arrow_down_icon)
+        self.down_button.image = arrow_down_icon
+        self.down_button.grid(row=2, column=0, sticky="ew", padx=20, pady=(10, 0), ipady = 20)
+
+        # Container for routes
+        self.routes_frame = ctk.CTkFrame(self.list_container)
+        self.routes_frame.grid(row=1, column=0, sticky="nw", padx=20)
+        self.routes_frame.grid_columnconfigure(0, weight=1)
+
+        # Selected route details
+        self.selected_route_label = ctk.CTkLabel(self.details_container, text="Select a route")
+        self.selected_route_label.grid(row=0, column=0, sticky="nw", pady=(0, 10))
 
         self.populate_routes()
-        self.add_scroll_by_dragging()
+        self.update_displayed_routes()
+
+        self.selected_button = None  # This will hold the reference to the currently selected button
+
 
     def populate_routes(self):
-        route_data = self.db_manager.fetch_routes()
+        self.route_data = self.db_manager.fetch_routes()
+        self.check_button_state()
 
-        for route in route_data:
-            route_frame = ttk.Frame(self.scrollable_frame)
-            route_frame.pack(pady=10, padx=10, fill="x", expand=True)
+    def update_displayed_routes(self):
+        # Clear the current routes
+        for widget in self.routes_frame.winfo_children():
+            widget.destroy()
 
-            route_number_label = ttk.Label(route_frame, text=route[0], font=('Arial', 30, 'bold'))
-            route_number_label.grid(row=0, column=0, rowspan=4, sticky="ns", padx=10)
-            route_number_label.bind("<Button-1>", lambda e, r=route: self.select_route(r))
+        # Display up to 4 routes starting from the current index
+        for i in range(self.current_index, min(self.current_index + self.max_display, len(self.route_data))):
+            self.display_route(self.route_data[i], i)
 
-            start_stop_label = ttk.Label(route_frame, text=route[1], font=('Arial', 20))
-            start_stop_label.grid(row=0, column=1, sticky="w")
-            start_stop_label.bind("<Button-1>", lambda e, r=route: self.select_route(r))
 
-            start_time_label = ttk.Label(route_frame, text=route[3].strftime('%H:%M'), font=('Arial', 16))
-            start_time_label.grid(row=1, column=1, sticky="w")
-            start_time_label.bind("<Button-1>", lambda e, r=route: self.select_route(r))
+        self.check_button_state()
 
-            destination_stop_label = ttk.Label(route_frame, text=route[2], font=('Arial', 20))
-            destination_stop_label.grid(row=2, column=1, sticky="w")
-            destination_stop_label.bind("<Button-1>", lambda e, r=route: self.select_route(r))
+    def display_route(self, route, index):
+        button_color = "#0c2b43" if route[0] == getattr(self, 'selected_route_id', None) else "#144870"  # Default color
 
-            destination_time_label = ttk.Label(route_frame, text=route[4].strftime('%H:%M'), font=('Arial', 16))
-            destination_time_label.grid(row=3, column=1, sticky="w")
-            destination_time_label.bind("<Button-1>", lambda e, r=route: self.select_route(r))
-
-            # Here is the corrected line with the default argument in the lambda function
-            route_frame.bind("<Button-1>", lambda e, r=route: self.select_route(r))
-            self.routes_canvas.bind_all("<MouseWheel>", self.on_mousewheel)
-
-            if route != route_data[-1]:  # Check if not the last route
-                separator = ttk.Separator(self.scrollable_frame, orient='horizontal')
-                separator.pack(fill='x', padx=10, pady=5)
+        route_button = ctk.CTkButton(self.routes_frame, text=f"{route[0]}", command=lambda r=route: self.select_route(r), font=("Arial", 30), width=200, fg_color=button_color, hover_color="#0c2b43")
+        route_button.grid(row=index, column=0, sticky="ew", padx=10, pady=10, ipadx=5, ipady=20)
 
     def select_route(self, route):
-        self.selected_route_label.configure(
-            text=f"Selected Route: {route[0]}\nFrom: {route[1]} To: {route[2]}\nDeparture: {route[3]} Arrival: {route[4]}")
+        # Update the selected_route_label with more info about the route
+        info = f"Selected Route: {route[0]}\nFrom: {route[1]} To: {route[2]}\nDeparture: {route[3]} Arrival: {route[4]}"
+        self.selected_route_label.configure(text=info)
 
-    def on_mousewheel(self, event):
-        # The following factor 120 is typically used on Windows to normalize the event.delta.
-        # On MacOS, you might need to use 1 instead of 120. For Linux, you will use the event.num.
-        scroll_step = -1 * (event.delta // 120)
-        self.routes_canvas.yview_scroll(scroll_step, "units")
+        # Print the selected route to the console
+        print(info)
 
-    def add_scroll_by_dragging(self):
-        self.canvas_last_y = 0
-        self.canvas_scroll_start_y = 0
+        # Update the selected_route_id and refresh the display
+        self.selected_route_id = route[0]
+        self.update_displayed_routes()
 
-        self.routes_canvas.bind("<ButtonPress-1>", self.start_drag)
-        self.routes_canvas.bind("<B1-Motion>", self.dragging)
-        self.routes_canvas.bind("<ButtonRelease-1>", self.stop_drag)
+    def scroll_up(self):
+        if self.current_index >= self.max_display:
+            self.current_index -= self.max_display
+            self.update_displayed_routes()
 
-    def start_drag(self, event):
-        self.canvas_scroll_start_y = event.y
-        self.canvas_last_y = event.y
+    def scroll_down(self):
+        if self.current_index + self.max_display < len(self.route_data):
+            self.current_index += self.max_display
+            self.update_displayed_routes()
 
-    def dragging(self, event):
-        delta_y = event.y - self.canvas_last_y
-        self.routes_canvas.yview_scroll(int(-delta_y / 50),
-                                        "units")  # The division factor can be adjusted for smoother scrolling
-        self.canvas_last_y = event.y
+    def check_button_state(self):
+        # Check "Up" button state
+        if self.current_index < self.max_display:
+            self.up_button.configure(state=ctk.DISABLED, fg_color="#A9A9A9")  # Darker color when disabled
+        else:
+            self.up_button.configure(state=ctk.NORMAL, fg_color="green")  # Original color when enabled
 
-    def stop_drag(self, event):
-        self.canvas_last_y = 0
-        self.canvas_scroll_start_y = 0
-
-    # For Windows and MacOS
+        # Check "Down" button state
+        if self.current_index + self.max_display >= len(self.route_data):
+            self.down_button.configure(state=ctk.DISABLED, fg_color="#A9A9A9")
+        else:
+            self.down_button.configure(state=ctk.NORMAL, fg_color="green")
