@@ -13,8 +13,9 @@ class SubPage1(ctk.CTkFrame):
         self.max_display = 8  # Maximum number of routes to display at a time
 
         # Configure grid for the whole page
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=2)
+        self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure(1, weight=0)
+        self.grid_columnconfigure(2, weight=0)
 
         self.grid_rowconfigure(index=0, weight=1)
 
@@ -27,8 +28,10 @@ class SubPage1(ctk.CTkFrame):
         # Right side container for selected route details
         self.details_container = ctk.CTkFrame(self)
 
-        self.details_container.grid(row=0, column=1, sticky="nsew", padx=(10, 20), pady=20)
+        self.details_container.grid(row=0, column=1, sticky="news", padx=0, pady=20)
         self.details_container.grid_columnconfigure(0, weight=1)
+        self.details_container.grid_rowconfigure(index=0, weight=0)
+        self.details_container.grid_rowconfigure(index=1, weight=1)
 
         # Load the image (assuming it's in the same directory as your script)
         arrow_up = Image.open("icons/arrows/arrow_up.png")  # Replace 'your_image.png' with your image file
@@ -55,9 +58,13 @@ class SubPage1(ctk.CTkFrame):
         self.routes_frame.grid(row=1, column=0, sticky="nw", padx=20)
         self.routes_frame.grid_columnconfigure(0, weight=1)
 
+
+        self.selected_route_header_label = ctk.CTkLabel(self.details_container, text="Detail spoja", width=300, font=("Arial", 30))
+        self.selected_route_header_label.grid(row=0, column=0, sticky="nws", pady=0)
+
         # Selected route details
-        self.selected_route_label = ctk.CTkLabel(self.details_container, text="Select a route")
-        self.selected_route_label.grid(row=0, column=0, sticky="nw", pady=(0, 10))
+        self.selected_route_label = ctk.CTkLabel(self.details_container, text="Select a route", width= 300, anchor='w')
+        self.selected_route_label.grid(row=1, column=0, sticky="nws", pady=0)
 
         self.populate_routes()
         self.update_displayed_routes()
@@ -90,7 +97,8 @@ class SubPage1(ctk.CTkFrame):
     def select_route(self, route):
         # Update the selected_route_label with more info about the route
         info = f"Selected Route: {route[0]}\nFrom: {route[1]} To: {route[2]}\nDeparture: {route[3]} Arrival: {route[4]}"
-        self.selected_route_label.configure(text=info)
+        start = route
+        self.selected_route_label.configure(text=info, anchor='w')
 
         # Print the selected route to the console
         print(info)

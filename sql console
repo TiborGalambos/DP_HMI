@@ -158,3 +158,27 @@ LEFT JOIN LATERAL (
 LEFT JOIN Stops last_stop ON last_schedule.stop_id = last_stop.stop_id;
 
 
+--all trips with names, first/last stops and their time fixed.
+SELECT
+    t.trip_name,
+    fs.name AS first_stop_name,
+    ls.name AS last_stop_name,
+    fst.arrival_time AS first_stop_time,
+    lst.arrival_time AS last_stop_time
+FROM
+    trips t
+JOIN
+    routes r ON t.route_id = r.route_id
+JOIN
+    stops fs ON r.start_stop_id = fs.stop_id
+JOIN
+    stops ls ON r.end_stop_id = ls.stop_id
+JOIN
+    schedules fst ON fs.stop_id = fst.stop_id
+JOIN
+    schedules lst ON ls.stop_id = lst.stop_id
+WHERE
+    fst.trip_id = t.trip_id AND
+    lst.trip_id = t.trip_id
+ORDER BY
+    t.trip_id, fst.arrival_time, lst.arrival_time;

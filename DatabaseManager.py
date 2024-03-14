@@ -34,43 +34,28 @@ class DatabaseManager:
             cur = conn.cursor()
             query = """
             SELECT
-                t.trip_name,
-                first_stop.name AS start_stop,
-                last_stop.name AS end_stop,
-                first_schedule.arrival_time AS start_arrival_time,
-                last_schedule.arrival_time AS end_arrival_time
-            FROM
-                Trips t
-            LEFT JOIN LATERAL (
-                SELECT
-                    s.stop_id,
-                    sch.arrival_time
-                FROM
-                    Schedules sch
-                JOIN
-                    Stops s ON sch.stop_id = s.stop_id
-                WHERE
-                    sch.trip_id = t.trip_id
-                ORDER BY
-                    sch.arrival_time
-                LIMIT 1
-            ) first_schedule ON TRUE
-            LEFT JOIN Stops first_stop ON first_schedule.stop_id = first_stop.stop_id
-            LEFT JOIN LATERAL (
-                SELECT
-                    s.stop_id,
-                    sch.arrival_time
-                FROM
-                    Schedules sch
-                JOIN
-                    Stops s ON sch.stop_id = s.stop_id
-                WHERE
-                    sch.trip_id = t.trip_id
-                ORDER BY
-                    sch.arrival_time DESC
-                LIMIT 1
-            ) last_schedule ON TRUE
-            LEFT JOIN Stops last_stop ON last_schedule.stop_id = last_stop.stop_id;
+    t.trip_name,
+    fs.name AS first_stop_name,
+    ls.name AS last_stop_name,
+    fst.arrival_time AS first_stop_time,
+    lst.arrival_time AS last_stop_time
+FROM
+    trips t
+JOIN
+    routes r ON t.route_id = r.route_id
+JOIN
+    stops fs ON r.start_stop_id = fs.stop_id
+JOIN
+    stops ls ON r.end_stop_id = ls.stop_id
+JOIN
+    schedules fst ON fs.stop_id = fst.stop_id
+JOIN
+    schedules lst ON ls.stop_id = lst.stop_id
+WHERE
+    fst.trip_id = t.trip_id AND
+    lst.trip_id = t.trip_id
+ORDER BY
+    t.trip_id, fst.arrival_time, lst.arrival_time;
             """
             cur.execute(query)
             routes = cur.fetchall()
