@@ -33,34 +33,77 @@ class DatabaseManager:
             conn = self.get_connection()
             cur = conn.cursor()
             query = """
-            SELECT
-    t.trip_name,
-    fs.name AS first_stop_name,
-    ls.name AS last_stop_name,
-    fst.arrival_time AS first_stop_time,
-    lst.arrival_time AS last_stop_time
-FROM
-    trips t
-JOIN
-    routes r ON t.route_id = r.route_id
-JOIN
-    stops fs ON r.start_stop_id = fs.stop_id
-JOIN
-    stops ls ON r.end_stop_id = ls.stop_id
-JOIN
-    schedules fst ON fs.stop_id = fst.stop_id
-JOIN
-    schedules lst ON ls.stop_id = lst.stop_id
-WHERE
-    fst.trip_id = t.trip_id AND
-    lst.trip_id = t.trip_id
-ORDER BY
-    t.trip_id, fst.arrival_time, lst.arrival_time;
+            SELECT 
+                r.route_id,
+                ss.name AS start_stop_name,
+                es.name AS end_stop_name
+            FROM 
+                routes r
+            JOIN 
+                stops ss ON r.start_stop_id = ss.stop_id
+            JOIN 
+                stops es ON r.end_stop_id = es.stop_id
+            ORDER BY 
+                ss.name;
             """
             cur.execute(query)
-            routes = cur.fetchall()
+            trips = cur.fetchall()
             cur.close()
             # conn.close()
+            return trips
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return []
+
+    def fetch_trip_by_route_id(self, route_id):
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+
+            query = """
+            SELECT
+                trip_id,
+                trip_name
+            FROM
+                trips
+            WHERE
+                route_id = %s;
+            """
+
+            cur.execute(query, (route_id,))
+
+            routes = cur.fetchall()
+            cur.close()
+            return routes
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return []
+
+    def fetch_trip_stop_times(self, trip_id):
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+
+            query = """
+            SELECT
+                s.name AS stop_name,
+                sch.arrival_time
+            FROM
+                Schedules sch
+            JOIN
+                Trips t ON sch.trip_id = t.trip_id
+            JOIN
+                Stops s ON sch.stop_id = s.stop_id
+            WHERE
+                t.trip_id = %s
+            ORDER BY
+                sch.arrival_time;
+                        """
+
+            cur.execute(query, (trip_id,))
+
+            routes = cur.fetchall()
+            cur.close()
             return routes
         except Exception as e:
             print(f"An error occurred: {e}")

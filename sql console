@@ -112,7 +112,7 @@ JOIN
 JOIN
     Stops s ON sch.stop_id = s.stop_id
 WHERE
-    t.trip_name LIKE '%4722%'
+    t.trip_id = '12'
 ORDER BY
     sch.arrival_time;
 
@@ -182,3 +182,28 @@ WHERE
     lst.trip_id = t.trip_id
 ORDER BY
     t.trip_id, fst.arrival_time, lst.arrival_time;
+
+
+SELECT
+    r.route_id,
+    ss.name AS start_stop_name,
+    es.name AS end_stop_name
+FROM
+    routes r
+JOIN
+    stops ss ON r.start_stop_id = ss.stop_id
+JOIN
+    stops es ON r.end_stop_id = es.stop_id
+ORDER BY
+    ss.name;
+
+
+
+SELECT
+    trip_id,
+    trip_name
+FROM
+    trips
+WHERE
+    route_id = 2;
+
