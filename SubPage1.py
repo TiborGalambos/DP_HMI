@@ -34,14 +34,19 @@ class SubPage1(ctk.CTkFrame):
         self.trips_list_container.grid_rowconfigure(1, weight=1)
 
 
-
         # Right side container for selected route details
         self.details_container = ctk.CTkFrame(self)
+        self.details_container.configure(width=350)
+
         self.details_container.grid(row=0, column=3, sticky="news", padx=0, pady=20)
+
         self.details_container.grid_columnconfigure(0, weight=1)
         self.details_container.grid_columnconfigure(1, weight=1)
+
         self.details_container.grid_rowconfigure(index=0, weight=0)
         self.details_container.grid_rowconfigure(index=1, weight=1)
+
+        self.details_container.grid_propagate(False)
 
         # Load the image (assuming it's in the same directory as your script)
         arrow_up = Image.open("icons/arrows/arrow_up.png")  # Replace 'your_image.png' with your image file
@@ -82,12 +87,12 @@ class SubPage1(ctk.CTkFrame):
         self.routes_frame.grid_columnconfigure(0, weight=1)
 
 
-        self.selected_trip_header_label = ctk.CTkLabel(self.details_container, text="Detail spoja", width=500, font=("Arial", 30))
-        self.selected_trip_header_label.grid(row=0, column=0, sticky="nws", pady=0)
+        self.selected_trip_header_label = ctk.CTkLabel(self.details_container, text="Detail spoja", font=("Arial", 30), anchor='center')
+        self.selected_trip_header_label.grid(row=0, column=0, sticky="ew", pady=0, columnspan = 2)
 
         # Selected route details
         self.selected_trip_label = ctk.CTkLabel(self.details_container, text="Vyberte spoj!", width= 300, anchor='center', font=("Arial", 20))
-        self.selected_trip_label.grid(row=1, column=0, sticky="nesw", pady=0)
+        self.selected_trip_label.grid(row=1, column=0, sticky="nesw", pady=0, columnspan = 2)
 
         self.stop_name_labels = []
         self.stop_time_labels = []
@@ -151,20 +156,30 @@ class SubPage1(ctk.CTkFrame):
 
         self.selected_trip_label.destroy()
 
+        self.details_container.grid_rowconfigure(1,weight=0)
+
         self.stop_name_labels = []
         self.stop_time_labels = []
 
         # Starting row for displaying the labels
-        row = 2
+        row = 1
+
 
         for stop_name, stop_time in trip_stop_times:
             # Create a label for the stop name and align it to the left
-            stop_name_label = ctk.CTkLabel(self.details_container, text=stop_name, anchor='n', font=("Arial", 25))
-            stop_name_label.grid(row=row, column=0, sticky="w", pady=20, padx=20)
+            stop_name_label = ctk.CTkLabel(self.details_container, text=stop_name, anchor='w', font=("Arial", 15))
+            stop_time_label = ctk.CTkLabel(self.details_container, text=stop_time, anchor='e', font=("Arial", 15))
+
+            if row == 1:
+                stop_name_label.grid(row=row, column=0, sticky="w", pady=(50,5), padx=(20, 0))
+                stop_time_label.grid(row=row, column=1, sticky="e", pady=(50,5), padx=(0, 20))
+            else:
+                stop_name_label.grid(row=row, column=0, sticky="w", pady=5, padx=(20,0))
+                stop_time_label.grid(row=row, column=1, sticky="e", pady=5, padx=(0, 20))
 
             # Create a label for the stop time and align it to the left
-            stop_time_label = ctk.CTkLabel(self.details_container, text=stop_time, anchor='n', font=("Arial", 20))
-            stop_time_label.grid(row=row, column=1, sticky="e", pady=20, padx=20)
+
+
 
             # Add the labels to the lists for future reference
             self.stop_name_labels.append(stop_name_label)
