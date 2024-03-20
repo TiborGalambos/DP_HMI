@@ -20,6 +20,7 @@ class AppMainLayout(ctk.CTk, PageController):
     def __init__(self):
         super().__init__()
 
+        self.page_controller = None
         self.icons = list()
         self.page_display_names = {
             "Výber aplikácie": "MainPage",
@@ -38,6 +39,10 @@ class AppMainLayout(ctk.CTk, PageController):
         # self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
+        self.route_label = None
+        self.header_frame = None
+
+
         self.pages_container()
 
         self.navigation_bar_container()
@@ -47,6 +52,8 @@ class AppMainLayout(ctk.CTk, PageController):
         self.maximize_window()
 
         self.load_icons()
+
+
 
     def get_icons(self):
         return self.icons
@@ -69,11 +76,7 @@ class AppMainLayout(ctk.CTk, PageController):
             print("Only one monitor detected. Opening fullscreen on the primary monitor.")
             self.attributes("-fullscreen", True)
 
-    # def fullscreen(self):
-    #     if (fullscreen_mode):
-    #         self.attributes("-fullscreen", True)
-    #     else:
-    #         self.geometry('1280x800')
+
 
     def navigation_bar_container(self):
         # Navigation bar
@@ -95,6 +98,7 @@ class AppMainLayout(ctk.CTk, PageController):
         i = 0
         for F in (MainPage, SubPage1, SubPage2, SubPage3, SubPage4, SubPage5):
             page_name = F.__name__
+            print(page_name)
             page = F(master=self.pages_container, controller=self)
             self.pages[page_name] = page
             page.grid(row=0, column=0, sticky="nsew")
@@ -106,18 +110,20 @@ class AppMainLayout(ctk.CTk, PageController):
 
     def header_container(self):
         # Header frame
-        self.header_frame = ctk.CTkFrame(self)
+        self.header_frame = ctk.CTkFrame(self, height=100)
         self.header_frame.grid(row=0, column=0, sticky='ew')  # place at the top
 
         # Set fixed sizes for columns 0 and 2, and make column 1 expandable
         fixed_size = 300  # Adjust this value as needed for your layout
-        self.header_frame.grid_columnconfigure(0, minsize=fixed_size)  # Fixed size for column 0
+        self.header_frame.grid_columnconfigure(0, weight=0)  # Fixed size for column 0
         self.header_frame.grid_columnconfigure(1, weight=1)  # Column 1 expands
-        self.header_frame.grid_columnconfigure(2, minsize=fixed_size)  # Fixed size for column 2
+        self.header_frame.grid_columnconfigure(2, weight=0)  # Fixed size for column 2
+
+        # self.header_frame.grid_propagate(False)
 
         # Left label with dummy text
-        self.dummy_label = ctk.CTkLabel(self.header_frame, text="Trasa nezvolená", padx=20, font=('Arial', 26, 'bold'))
-        self.dummy_label.grid(row=0, column=0, sticky='w')
+        self.route_label = ctk.CTkLabel(self.header_frame, text="Trasa nezvolená", padx=30, font=('Arial', 26, 'bold'), width=400, anchor='w')
+        self.route_label.grid(row=0, column=0, sticky='news')
 
         # Center label for page name
         self.header_label = ctk.CTkLabel(self.header_frame, text="", font=('Arial', 35, 'bold'))
@@ -128,7 +134,7 @@ class AppMainLayout(ctk.CTk, PageController):
         self.datetime_frame.grid(row=0, column=2, sticky='e')
 
         # Time label with larger font
-        self.time_label = ctk.CTkLabel(self.datetime_frame, text="", font=('Arial', 35, 'bold'), padx=10)
+        self.time_label = ctk.CTkLabel(self.datetime_frame, text="", font=('Arial', 35, 'bold'), padx=10, width=400)
         self.time_label.grid(row=0, column=0, sticky='news')
 
         # Date label with smaller font
@@ -136,6 +142,9 @@ class AppMainLayout(ctk.CTk, PageController):
         self.date_label.grid(row=1, column=0, sticky='news')
 
         self.update_datetime()
+
+
+
 
     def update_datetime(self):
         '''Update the date and time display'''
@@ -171,7 +180,14 @@ class AppMainLayout(ctk.CTk, PageController):
         route_icon = ctk.CTkImage(Image.open("icons/navigation_bar/route_icon.png"), size=(50, 50))
         drive_icon = ctk.CTkImage(Image.open("icons/navigation_bar/drive_icon.png"), size=(50, 50))
         text_icon = ctk.CTkImage(Image.open("icons/navigation_bar/message_icon.png"), size=(50, 50))
-        diagnostics_icon = ctk.CTkImage(Image.open("icons/navigation_bar/diagnostics_icon.png"), size=(50, 50))
+        diagnostics_icon = ctk.CTkImage(Image.open("icons/navigation_bar/diagnostics_icon.png"), size=(65, 65))
         settings_icon = ctk.CTkImage(Image.open("icons/navigation_bar/settings_icon.png"), size=(50, 50))
 
         self.icons = [home_icon, route_icon, drive_icon, text_icon, diagnostics_icon, settings_icon]
+
+    def set_route_label(self, route_name):
+        self.route_label.configure(text=route_name)
+
+    def delete_route_label(self):
+
+        self.route_label.configure(text='Trasa nezvolená')

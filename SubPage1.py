@@ -3,6 +3,8 @@ from DatabaseManager import DatabaseManager
 from PIL import Image
 
 import customtkinter as ctk
+import tkinter.ttk as ttk
+import tkinter as tk
 
 class SubPage1(ctk.CTkFrame):
     def __init__(self, master, controller):
@@ -15,11 +17,14 @@ class SubPage1(ctk.CTkFrame):
         self.max_display_route = 6  # Maximum number of routes to display at a time
 
         self.selected_route_id = 0
+        self.is_trip_selected = False
+        self.selected_trip_name = ''
 
         # Configure grid for the whole page
         self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=0)
         self.grid_columnconfigure(2, weight=0)
+        self.grid_columnconfigure(3, weight=1)
 
         self.grid_rowconfigure(index=0, weight=1)
 
@@ -38,7 +43,7 @@ class SubPage1(ctk.CTkFrame):
         self.details_container = ctk.CTkFrame(self)
         self.details_container.configure(width=350)
 
-        self.details_container.grid(row=0, column=3, sticky="news", padx=0, pady=20)
+        self.details_container.grid(row=0, column=2, sticky="news", padx=0, pady=20)
 
         self.details_container.grid_columnconfigure(0, weight=1)
         self.details_container.grid_columnconfigure(1, weight=1)
@@ -47,6 +52,95 @@ class SubPage1(ctk.CTkFrame):
         self.details_container.grid_rowconfigure(index=1, weight=1)
 
         self.details_container.grid_propagate(False)
+
+        self.settings_container = ctk.CTkFrame(self)
+        self.settings_container.grid(row=0, column=3, sticky="news", padx=20, pady=20)
+        self.settings_container.grid_columnconfigure(0, weight=1)
+        self.settings_container.grid_columnconfigure(1, weight=1)
+
+        self.settings_container.grid_rowconfigure(0, weight=0)
+        self.settings_container.grid_rowconfigure(1, weight=0)
+        self.settings_container.grid_rowconfigure(2, weight=0)
+        self.settings_container.grid_rowconfigure(3, weight=0)
+        self.settings_container.grid_rowconfigure(4, weight=0)
+
+        self.settings_container_header_label = ctk.CTkLabel(self.settings_container, text="Nastavenia trasy",
+                                                            font=("Arial", 30), anchor='center')
+        self.settings_container_header_label.grid(row=0, column=0, sticky="ew", pady=(0, 50), columnspan=2)
+
+        self.display_panel_settings = ctk.CTkLabel(self.settings_container, text="Vybraná trasa", font=("Arial", 20),
+                                                   anchor='w')
+        self.display_panel_settings.grid(row=1, column=0, pady=(20, 0), padx=20)
+
+        self.separator = ttk.Separator(self.settings_container)
+        self.separator.grid(row=2, column=0, padx=100, pady=0, columnspan=2, sticky='news')
+
+        self.settings_route_name = ctk.CTkLabel(self.settings_container, text="-", font=("Arial", 20),
+                                                   anchor='w', height=100)
+        self.settings_route_name.grid(row=3, column=0, pady=(20, 0), padx=20)
+
+
+
+
+        self.display_panel_settings = ctk.CTkLabel(self.settings_container, text="Výber panelov", font=("Arial", 20),
+                                                   anchor='w')
+        self.display_panel_settings.grid(row=4, column=0, pady=(20, 0), padx=20)
+
+        self.separator = ttk.Separator(self.settings_container)
+        self.separator.grid(row=5, column=0, padx=100, pady=0, columnspan=2, sticky='news')
+
+
+
+
+        # Create a CTkCheckBox
+
+
+
+        self.switch_setting_1 = ctk.IntVar()  # This variable will hold the state of the checkbox, 0 for unchecked, 1 for checked
+
+        self.switch1 = ctk.CTkSwitch(self.settings_container, text="Zapnúť zobrazenie trasy na vonk. paneli č.1", variable=self.switch_setting_1,
+                                        onvalue=1, offvalue=0, command=self.switch1_callback, font=("Arial", 30))
+        self.switch1.grid(row=6, column=0, pady=20, padx=20, columnspan=2)
+
+        # Create a CTkCheckBox
+        self.switch_setting_2 = ctk.IntVar()  # This variable will hold the state of the checkbox, 0 for unchecked, 1 for checked
+
+        self.switch2 = ctk.CTkSwitch(self.settings_container, text="Zapnúť zobrazenie trasy na vonk. paneli č.2", variable=self.switch_setting_2,
+                                     onvalue=1, offvalue=0, command=self.switch2_callback, font=("Arial", 30))
+        self.switch2.grid(row=7, column=0, pady=20, padx=20, columnspan=2)
+
+
+
+        self.drive_mode =  ctk.CTkLabel(self.settings_container, text="Riadenie zastávok", font=("Arial", 20), anchor='w')
+
+        self.drive_mode.grid(row=8, column=0, pady=(20,0), padx=20)
+
+        self.separator = ttk.Separator(self.settings_container)
+        self.separator.grid(row=9,column = 0, padx=100, pady=0, columnspan = 2, sticky='news')
+
+        # Create a CTkCheckBox
+        self.switch_setting_3 = ctk.IntVar()  # This variable will hold the state of the checkbox, 0 for unchecked, 1 for checked
+        self.switch_setting_3.set(1)
+        self.switch3 = ctk.CTkCheckBox(self.settings_container, text="Manuálne", variable=self.switch_setting_3,
+                                     onvalue=1, offvalue=0, command=self.switch3_callback, font=("Arial", 30))
+        self.switch3.grid(row=10, column=0, pady=20, padx=20)
+
+        # Create a CTkCheckBox
+        self.switch_setting_4 = ctk.IntVar()  # This variable will hold the state of the checkbox, 0 for unchecked, 1 for checked
+        self.switch_setting_4.set(0)
+        self.switch4 = ctk.CTkCheckBox(self.settings_container, text="Automatické", variable=self.switch_setting_4,
+                                     onvalue=1, offvalue=0, command=self.switch4_callback, font=("Arial", 30))
+        self.switch4.grid(row=10, column=1, pady=20, padx=20)
+
+        self.settings_container.grid_rowconfigure(index=8, weight=1)
+
+        self.cancel_button = ctk.CTkButton(self.settings_container, text="Zrušiť jazdu", fg_color='red', hover_color='darkred',
+                                           font=("Arial", 30), width=200, command=self.stop)
+        self.cancel_button.grid(row=11, column=0, sticky='ws', pady=50, padx=(100,0), ipadx=20, ipady=70)
+
+        self.finish_button = ctk.CTkButton(self.settings_container, text="Začať jazdu", fg_color='green', font=("Arial", 30), width=200, hover_color='darkgreen', command=self.start_the_trip)
+        self.finish_button.grid(row=11, column=1, sticky='es', pady = 50, padx= (0,100), ipadx=20, ipady=70)
+
 
         # Load the image (assuming it's in the same directory as your script)
         arrow_up = Image.open("icons/arrows/arrow_up.png")  # Replace 'your_image.png' with your image file
@@ -108,6 +202,64 @@ class SubPage1(ctk.CTkFrame):
         self.selected_trip_id = 0
         self.selected_route_id = 0
 
+        self.set_settings_button_state()
+
+    def start_the_trip(self):
+
+        panel1 = False
+        panel2 = False
+        auto_drive = False
+
+        if self.is_trip_selected:
+
+            if self.switch_setting_1.get() == 1:
+                panel1 = True
+
+            if self.switch_setting_2.get() == 1:
+                panel2 = True
+
+            if self.switch_setting_3.get() == 0 and self.switch_setting_4.get() == 1:
+                auto_drive = True
+
+
+            self.controller.set_route_label(self.selected_trip_name)
+        else:
+            print("Cannot start, trip not selected!")
+
+        self.set_settings_button_state()
+
+    def stop(self):
+
+        if self.is_trip_selected:
+
+            self.controller.delete_route_label()
+            self.settings_route_name.configure(text='-', font=("Arial", 30),
+                                               anchor='center', height=100)
+            self.is_trip_selected = False
+        else:
+            print("Cannot cancel, trip not selected!")
+
+        self.set_settings_button_state()
+
+
+    def switch1_callback(self):
+        print("Checkbox checkbox1 state changed:", self.switch_setting_1.get())
+
+    def switch2_callback(self):
+        print("Checkbox checkbox2 state changed:", self.switch_setting_2.get())
+
+    def switch3_callback(self):
+        print("Checkbox checkbox3 state changed:", self.switch_setting_3.get())
+        if self.switch_setting_3.get() == 1:  # If switch3 is checked
+            self.switch_setting_4.set(0)  # Uncheck switch4
+            self.switch4_callback()
+
+    def switch4_callback(self):
+        print("Checkbox checkbox4 state changed:", self.switch_setting_4.get())
+        if self.switch_setting_4.get() == 1:  # If switch4 is checked
+            self.switch_setting_3.set(0)  # Uncheck switch3
+            self.switch3_callback()
+
     def populate_trips(self):
         self.trip_data = self.db_manager.fetch_trip_by_route_id(self.selected_route_id)
         self.check_trips_button_state()
@@ -129,10 +281,8 @@ class SubPage1(ctk.CTkFrame):
             widget.destroy()
 
         for i in range(self.current_index_trip, min(self.current_index_trip + self.max_display_trip, len(self.trip_data))):
-            print(i)
             self.display_trips(self.trip_data[i], i)
 
-        print(f"update trips func - current_index_trip: {self.current_index_trip}")
 
         self.check_trips_button_state()
 
@@ -142,7 +292,6 @@ class SubPage1(ctk.CTkFrame):
         trip_button = ctk.CTkButton(self.trips_frame, text=f"{route[1]}", command=lambda r=route: self.select_trip(r), font=("Arial", 30), width=200, fg_color=button_color, hover_color="#0c2b43")
         trip_button.grid(row=index, column=0, sticky="ew", padx=10, pady=10, ipadx=5, ipady=20)
 
-        print(route[0], self.current_index_trip)
 
     def select_trip(self, trip):
 
@@ -192,17 +341,26 @@ class SubPage1(ctk.CTkFrame):
         self.selected_trip_id = trip[0]
         self.update_displayed_trips()
 
+        self.is_trip_selected = True
+
+        self.selected_trip_name = trip[1]
+
+        self.settings_route_name.configure(text=self.selected_trip_name, font=("Arial", 30),
+                                                anchor='center', height=100)
+
+        self.set_settings_button_state()
+
+
+
     def display_routes(self, route, index):
         button_color = "#0c2b43" if route[0] == getattr(self, 'selected_route_id', None) else "#144870"  # Default color
 
         route_button = ctk.CTkButton(self.routes_frame, text=f"{route[1]}\n{route[2]}", command=lambda r=route: self.select_route(r), font=("Arial", 30), width=200, fg_color=button_color, hover_color="#0c2b43")
         route_button.grid(row=index, column=0, sticky="ew", padx=10, pady=10, ipadx=5, ipady=17)
 
-        print(route[0], self.current_index_route)
 
     def select_route(self, route):
         info = f"Selected Route: {route[0]}"
-        print(info)
         self.selected_route_id = route[0]
         self.current_index_trip = 0
         self.populate_trips()
@@ -256,4 +414,14 @@ class SubPage1(ctk.CTkFrame):
             self.down_button_route.configure(state=ctk.DISABLED, fg_color="#A9A9A9")
         else:
             self.down_button_route.configure(state=ctk.NORMAL, fg_color="green")
+
+    def set_settings_button_state(self):
+        if not self.is_trip_selected:
+            self.finish_button.configure(state=ctk.DISABLED, fg_color="#A9C8A9")  # Darker color when disabled
+            self.cancel_button.configure(state=ctk.DISABLED, fg_color="#EBA9A9")
+        else:
+            self.finish_button.configure(state=ctk.NORMAL, fg_color="green")  # Darker color when disabled
+            self.cancel_button.configure(state=ctk.NORMAL, fg_color="red")
+
+
 
