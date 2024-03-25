@@ -1,10 +1,13 @@
-
+import GLOBAL_VARS
 from DatabaseManager import DatabaseManager
 from PIL import Image
 
 import customtkinter as ctk
 import tkinter.ttk as ttk
 import tkinter as tk
+
+from SubPage2 import SubPage2
+
 
 class SubPage1(ctk.CTkFrame):
     def __init__(self, master, controller):
@@ -200,9 +203,19 @@ class SubPage1(ctk.CTkFrame):
         self.selected_trip_button = None
 
         self.selected_trip_id = 0
+
         self.selected_route_id = 0
 
         self.set_settings_button_state()
+
+        # self.switch_window()
+
+
+
+
+    def switch_window(self):
+        self.controller.switch_page("SubPage2")
+        # pass
 
     def start_the_trip(self):
 
@@ -228,6 +241,9 @@ class SubPage1(ctk.CTkFrame):
 
         self.set_settings_button_state()
 
+        self.switch_window()
+
+
     def stop(self):
 
         if self.is_trip_selected:
@@ -240,6 +256,10 @@ class SubPage1(ctk.CTkFrame):
             print("Cannot cancel, trip not selected!")
 
         self.set_settings_button_state()
+        GLOBAL_VARS.active_trip_id = 0
+        self.controller.unset_subpage2_map_markers()
+
+
 
 
     def switch1_callback(self):
@@ -339,6 +359,7 @@ class SubPage1(ctk.CTkFrame):
 
         # Update the selected trip ID and any other necessary UI components
         self.selected_trip_id = trip[0]
+        GLOBAL_VARS.active_trip_id = trip[0]
         self.update_displayed_trips()
 
         self.is_trip_selected = True
@@ -349,6 +370,8 @@ class SubPage1(ctk.CTkFrame):
                                                 anchor='center', height=100)
 
         self.set_settings_button_state()
+
+
 
 
 

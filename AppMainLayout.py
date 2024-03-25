@@ -3,6 +3,7 @@ import time
 import customtkinter as ctk
 from screeninfo import get_monitors
 
+import GLOBAL_VARS
 from DatabaseManager import DatabaseManager
 from PageController import PageController
 from SubPage5 import SubPage5
@@ -20,7 +21,7 @@ class AppMainLayout(ctk.CTk, PageController):
     def __init__(self):
         super().__init__()
 
-        self.page_controller = None
+        self.page_controller = PageController()
         self.icons = list()
         self.page_display_names = {
             "Výber aplikácie": "MainPage",
@@ -54,7 +55,6 @@ class AppMainLayout(ctk.CTk, PageController):
         self.load_icons()
 
 
-
     def get_icons(self):
         return self.icons
 
@@ -85,8 +85,10 @@ class AppMainLayout(ctk.CTk, PageController):
         self.nav_bar.grid_rowconfigure(0, weight=0)
         self.nav_bar.grid_columnconfigure(index=0, weight=1)
         self.nav_bar.grid(row=2, column=0, sticky='s')
-        self.page_controller = PageController(self.pages, controller=self)
-        self.page_controller.show_page("SubPage1", self.header_label)
+
+        self.page_controller.setup(self.pages, controller=self)
+        self.page_controller.set_header_label(self.header_label)
+        self.page_controller.show_page("SubPage1")
 
     def pages_container(self):
         # Container for all pages
@@ -188,6 +190,17 @@ class AppMainLayout(ctk.CTk, PageController):
     def set_route_label(self, route_name):
         self.route_label.configure(text=route_name)
 
-    def delete_route_label(self):
 
+    def delete_route_label(self):
         self.route_label.configure(text='Trasa nezvolená')
+        GLOBAL_VARS.active_trip_id = 0
+
+    def switch_page(self, page_name):
+        self.page_controller.show_page(page_name)
+        if page_name == 'SubPage2' and not self.pages['SubPage2'].is_map_set:
+            self.pages['SubPage2'].set_map_markers()
+
+    def unset_subpage2_map_markers(self):
+        self.pages['SubPage2'].unset_map_markers()
+
+

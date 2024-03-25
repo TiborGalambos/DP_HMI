@@ -3,6 +3,7 @@ import socket
 import xml.etree.ElementTree as ET
 
 from AppMainLayout import AppMainLayout
+from DatabaseManager import DatabaseManager
 
 # from AppMainLayout import AppMainLayout
 
@@ -171,6 +172,11 @@ def dummy_action():
 import customtkinter as ckt
 
 if __name__ == "__main__":
+    dbm = DatabaseManager()
+    # if dbm.check_internet():
+    #     dbm.update_coordinates()
+
+
     app = AppMainLayout()
     app.mainloop()
 

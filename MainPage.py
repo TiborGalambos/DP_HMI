@@ -36,7 +36,7 @@ class MainPage(ctk.CTkFrame):
         icons = self.controller.get_icons()
 
         for text, page_name in self.buttons_info.items():
-            button = ctk.CTkButton(self, text=text, image = icons[icon_num], command=lambda name=page_name: controller.show_page(name, self.controller.header_label))
+            button = ctk.CTkButton(self, text=text, image = icons[icon_num], command=lambda name=page_name: controller.show_page(name, self.controller.header_label), corner_radius=100000)
             button.configure(font=("Arial", 25))
 
             button.grid(row=row_num, column=col_num, sticky='nsew', padx = 50, pady = 50)

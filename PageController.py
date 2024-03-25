@@ -1,14 +1,32 @@
 
 import GLOBAL_VARS
+import customtkinter as ctk
+
+from SubPage2 import SubPage2
+
 
 class PageController:
-    def __init__(self, pages, controller):
+    def __init__(self):
+        
+        self.header_label = None
+        self.nav_bar = None
+        self.page_display_names = None
+        self.controller = None
+        self.pages = None
+        
+    
+    
+    def setup(self, pages, controller):
         self.pages = pages
         self.controller = controller
         self.page_display_names = self.controller.page_display_names
         self.nav_bar = self.controller.nav_bar
+        self.header_label = ctk.CTkLabel(master=controller)
 
-    def show_page(self, page_name, header_label):
+    def set_header_label(self, header_label):
+        self.header_label = header_label
+
+    def show_page(self, page_name, header_label = None):
         '''Show a frame for the given page name and update header text'''
         page = self.pages[page_name]
         page.tkraise()
@@ -27,6 +45,10 @@ class PageController:
                     self.nav_bar.grid_columnconfigure(index=0, weight=1)
                     self.nav_bar.grid(row=2, column=0, sticky='s')
 
-        header_label.configure(text=display_name)
+
+        if self.header_label is None:
+            self.header_label = header_label
+
+        self.header_label.configure(text=display_name)
 
 
