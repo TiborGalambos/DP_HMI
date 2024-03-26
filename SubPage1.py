@@ -372,9 +372,6 @@ class SubPage1(ctk.CTkFrame):
         self.set_settings_button_state()
 
 
-
-
-
     def display_routes(self, route, index):
         button_color = "#0c2b43" if route[0] == getattr(self, 'selected_route_id', None) else "#144870"  # Default color
 
@@ -445,6 +442,4 @@ class SubPage1(ctk.CTkFrame):
         else:
             self.finish_button.configure(state=ctk.NORMAL, fg_color="green")  # Darker color when disabled
             self.cancel_button.configure(state=ctk.NORMAL, fg_color="red")
-
-
 
