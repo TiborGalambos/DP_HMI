@@ -12,6 +12,9 @@ from SubPage2 import SubPage2
 class SubPage1(ctk.CTkFrame):
     def __init__(self, master, controller):
         super().__init__(master)
+        self.panel2 = None
+        self.panel1 = None
+        self.auto_drive = None
         self.db_manager = DatabaseManager()
         self.controller = controller
         self.current_index_trip = 0  # Keep track of the current index of the displayed route
@@ -114,7 +117,7 @@ class SubPage1(ctk.CTkFrame):
 
 
 
-        self.drive_mode =  ctk.CTkLabel(self.settings_container, text="Riadenie zastávok", font=("Arial", 20), anchor='w')
+        self.drive_mode =  ctk.CTkLabel(self.settings_container, text="Zobraziť meškanie na paneli", font=("Arial", 20), anchor='w')
 
         self.drive_mode.grid(row=8, column=0, pady=(20,0), padx=20)
 
@@ -124,14 +127,14 @@ class SubPage1(ctk.CTkFrame):
         # Create a CTkCheckBox
         self.switch_setting_3 = ctk.IntVar()  # This variable will hold the state of the checkbox, 0 for unchecked, 1 for checked
         self.switch_setting_3.set(1)
-        self.switch3 = ctk.CTkCheckBox(self.settings_container, text="Manuálne", variable=self.switch_setting_3,
+        self.switch3 = ctk.CTkCheckBox(self.settings_container, text="Zobraziť", variable=self.switch_setting_3,
                                      onvalue=1, offvalue=0, command=self.switch3_callback, font=("Arial", 30))
         self.switch3.grid(row=10, column=0, pady=20, padx=20)
 
         # Create a CTkCheckBox
         self.switch_setting_4 = ctk.IntVar()  # This variable will hold the state of the checkbox, 0 for unchecked, 1 for checked
         self.switch_setting_4.set(0)
-        self.switch4 = ctk.CTkCheckBox(self.settings_container, text="Automatické", variable=self.switch_setting_4,
+        self.switch4 = ctk.CTkCheckBox(self.settings_container, text="Nezobraziť", variable=self.switch_setting_4,
                                      onvalue=1, offvalue=0, command=self.switch4_callback, font=("Arial", 30))
         self.switch4.grid(row=10, column=1, pady=20, padx=20)
 
@@ -208,6 +211,8 @@ class SubPage1(ctk.CTkFrame):
 
         self.set_settings_button_state()
 
+
+
         # self.switch_window()
 
 
@@ -219,27 +224,39 @@ class SubPage1(ctk.CTkFrame):
 
     def start_the_trip(self):
 
-        panel1 = False
-        panel2 = False
-        auto_drive = False
+        self.panel1 = False
+        self.panel2 = False
+        self.auto_drive = False
 
         if self.is_trip_selected:
 
             if self.switch_setting_1.get() == 1:
-                panel1 = True
+                self.panel1 = True
 
             if self.switch_setting_2.get() == 1:
-                panel2 = True
-
-            if self.switch_setting_3.get() == 0 and self.switch_setting_4.get() == 1:
-                auto_drive = True
-
+                self.panel2 = True
 
             self.controller.set_route_label(self.selected_trip_name)
         else:
             print("Cannot start, trip not selected!")
 
-        self.set_settings_button_state()
+
+        print(self.switch_setting_3.get(), self.switch_setting_4.get())
+
+        if self.switch_setting_3.get() and not self.switch_setting_4.get():
+            print("Drive control: manual")
+
+        elif not self.switch_setting_3.get() and self.switch_setting_4.get():
+            print("Drive control: automatic")
+            self.auto_drive = True
+
+        else:
+            print("Something went wrong")
+
+
+        # self.set_settings_button_state()
+        self.finish_button.configure(state=ctk.DISABLED, fg_color="#A9C8A9")  # Darker color when disabled
+        self.finish_button.configure(text="Prebieha jazda")
 
         self.switch_window()
 
@@ -258,6 +275,7 @@ class SubPage1(ctk.CTkFrame):
         self.set_settings_button_state()
         GLOBAL_VARS.active_trip_id = 0
         self.controller.unset_subpage2_map_markers()
+        self.finish_button.configure(text="Začať jazdu")
 
 
 
@@ -272,13 +290,23 @@ class SubPage1(ctk.CTkFrame):
         print("Checkbox checkbox3 state changed:", self.switch_setting_3.get())
         if self.switch_setting_3.get() == 1:  # If switch3 is checked
             self.switch_setting_4.set(0)  # Uncheck switch4
-            self.switch4_callback()
+
+        if self.switch_setting_3.get() == 0:  # If switch3 is checked
+            self.switch_setting_4.set(1)
+
+        # self.switch4_callback()
+
 
     def switch4_callback(self):
         print("Checkbox checkbox4 state changed:", self.switch_setting_4.get())
         if self.switch_setting_4.get() == 1:  # If switch4 is checked
             self.switch_setting_3.set(0)  # Uncheck switch3
-            self.switch3_callback()
+
+        if self.switch_setting_4.get() == 0:  # If switch4 is checked
+            self.switch_setting_3.set(1)  # Uncheck switch3
+
+        # self.switch3_callback()
+
 
     def populate_trips(self):
         self.trip_data = self.db_manager.fetch_trip_by_route_id(self.selected_route_id)

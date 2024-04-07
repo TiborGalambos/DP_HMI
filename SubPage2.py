@@ -1,5 +1,12 @@
+import os
+from concurrent.futures import ThreadPoolExecutor
+import requests
 import customtkinter as ctk
 from PIL import Image
+from tkintermapview import osm_to_decimal
+
+import io
+import sys
 
 import GLOBAL_VARS
 from DatabaseManager import DatabaseManager
@@ -8,6 +15,8 @@ import tkintermapview
 class SubPage2(ctk.CTkFrame):
     def __init__(self, master, controller):
         super().__init__(master)
+        self.fourth_row_container = None
+        self.delay_label = None
         self.stop_name3_label = None
         self.stop_name2_label = None
         self.stop_name1_label = None
@@ -37,10 +46,16 @@ class SubPage2(ctk.CTkFrame):
         self.trip_stops_container = ctk.CTkFrame(self)
         self.trip_stops_container.grid(row=0, column=1, sticky="nswe", padx=20, pady=20)
 
-        self.map_widget = tkintermapview.TkinterMapView(self.map_container, width=1200, height=1190, corner_radius=30)
+        self.database_path = os.path.join("offline_map.db")
+        self.map_widget = tkintermapview.TkinterMapView(self.map_container, width=1200, height=1190, corner_radius=30,
+                                                        use_database_only=True,
+                                                        database_path=self.database_path)
         self.map_widget.grid(sticky="news", row=0, column=0, ipadx=0, ipady=20)
 
         self.dbm = DatabaseManager()
+
+        self.offline_map_db_path = os.path.join("offline_map.db")
+
 
         self.current_stop_seq = 0
 
@@ -53,19 +68,27 @@ class SubPage2(ctk.CTkFrame):
         self.stops_box_position = 1
 
 
+    def check_internet_connection(self):
+        try:
+            response = requests.get("http://www.google.com", timeout=5)
+            return response.status_code == 200
+        except requests.ConnectionError:
+            return False
+
     def set_map_markers(self):
 
 
         for name, x, y, time in self.dbm.fetch_trip_stop_times_with_coords(GLOBAL_VARS.active_trip_id):
-            self.map_widget.set_marker(float(x), float(y))
+            marker = self.map_widget.set_marker(float(x), float(y))
+
 
             self.trip_coords.append((float(x), float(y)))
             self.trip_stops.append(name)
             self.trip_stop_times.append(time)
 
-        self.path = self.map_widget.set_path(self.trip_coords)
 
-        print()
+
+        self.path = self.map_widget.set_path(self.trip_coords)
 
         self.is_map_set = True
 
@@ -114,11 +137,12 @@ class SubPage2(ctk.CTkFrame):
         self.first_row_container = ctk.CTkFrame(self.trip_stops_container, border_width=5, border_color='darkgray', width =800)
         self.second_row_container = ctk.CTkFrame(self.trip_stops_container, border_width=5, border_color='darkgray', width =800)
         self.third_row_container = ctk.CTkFrame(self.trip_stops_container, border_width=5, border_color='darkgray', width =800)
+        self.fourth_row_container = ctk.CTkFrame(self.trip_stops_container, width=800)
 
-        self.first_row_container.grid(row=0, column=0, sticky='nwse', ipadx=30, ipady=30)
-        self.second_row_container.grid(row=1, column=0, sticky='nwse', ipadx=30, ipady=30)
-        self.third_row_container.grid(row=2, column=0, sticky='nwse', ipadx=30, ipady=30)
-
+        self.first_row_container.grid(row=0, column=0, sticky='nwse', ipadx=30, ipady=20)
+        self.second_row_container.grid(row=1, column=0, sticky='nwse', ipadx=30, ipady=20)
+        self.third_row_container.grid(row=2, column=0, sticky='nwse', ipadx=30, ipady=20)
+        self.fourth_row_container.grid(row=3, column= 0, sticky='nwse', ipadx=30, ipady=20)
 
 
         self.first_row_container.grid_columnconfigure(0, weight=1)
@@ -129,6 +153,8 @@ class SubPage2(ctk.CTkFrame):
 
         self.third_row_container.grid_columnconfigure(0, weight=1)
         self.third_row_container.grid_columnconfigure(1, weight=3)
+
+        self.fourth_row_container.grid_columnconfigure(0, weight=1)
 
         self.first_row_container.grid_rowconfigure(0, weight=1)
         self.first_row_container.grid_rowconfigure(1, weight=1)
@@ -142,27 +168,30 @@ class SubPage2(ctk.CTkFrame):
         self.third_row_container.grid_rowconfigure(1, weight=1)
         self.third_row_container.grid_rowconfigure(2, weight=1)
 
-        self.before_stop_label1 = ctk.CTkLabel(self.first_row_container, text="Začiatok trasy", font=('Arial', 18, 'bold'), text_color='green')
+        self.fourth_row_container.grid_rowconfigure(0, weight=1)
+
+
+        self.before_stop_label1 = ctk.CTkLabel(self.first_row_container, text="Príchod", font=('Arial', 18, 'bold'), text_color='green')
         self.in_stop_label1 = ctk.CTkLabel(self.first_row_container, text="V zastávke")
-        self.after_stop_label1 = ctk.CTkLabel(self.first_row_container, text="Na ceste")
+        self.after_stop_label1 = ctk.CTkLabel(self.first_row_container, text="Odchod")
 
         self.before_stop_label1.grid(row=0, column=1, sticky='nes', padx=(0, 50), pady=(20,0))
         self.in_stop_label1.grid(row=1, column=1, sticky='nes', padx=(0, 50))
         self.after_stop_label1.grid(row=2, column=1, sticky='nes', padx=(0, 50), pady=(0,20))
 
 
-        self.before_stop_label2 = ctk.CTkLabel(self.second_row_container, text="Na ceste")
+        self.before_stop_label2 = ctk.CTkLabel(self.second_row_container, text="Príchod")
         self.in_stop_label2 = ctk.CTkLabel(self.second_row_container, text="V zastávke")
-        self.after_stop_label2 = ctk.CTkLabel(self.second_row_container, text="Na ceste")
+        self.after_stop_label2 = ctk.CTkLabel(self.second_row_container, text="Odchod")
 
         self.before_stop_label2.grid(row=0, column=1, sticky='nes', padx=(0, 50), pady=(20,0))
         self.in_stop_label2.grid(row=1, column=1, sticky='nes', padx=(0, 50))
         self.after_stop_label2.grid(row=2, column=1, sticky='nes', padx=(0, 50), pady=(0,20))
 
 
-        self.before_stop_label3 = ctk.CTkLabel(self.third_row_container, text="Na ceste")
+        self.before_stop_label3 = ctk.CTkLabel(self.third_row_container, text="Príchod")
         self.in_stop_label3 = ctk.CTkLabel(self.third_row_container, text="V zastávke")
-        self.after_stop_label3 = ctk.CTkLabel(self.third_row_container, text="Na ceste")
+        self.after_stop_label3 = ctk.CTkLabel(self.third_row_container, text="Odchod")
 
         self.before_stop_label3.grid(row=0, column=1, sticky='nes', padx=(0, 50), pady=(20,0))
         self.in_stop_label3.grid(row=1, column=1, sticky='nes', padx=(0, 50))
@@ -191,14 +220,40 @@ class SubPage2(ctk.CTkFrame):
         self.in_stop_label2.configure(text=f'{self.trip_stop_times[self.current_stop_seq + 1]}')
         self.in_stop_label3.configure(text=f'{self.trip_stop_times[self.current_stop_seq + 2]}')
 
+        self.delay_label = ctk.CTkLabel(self.fourth_row_container, text='Aktuálne meškanie vlaku: 0. min', font=('Arial', 20))
+        self.delay_label.grid(row=0, column=0, sticky='nw', padx=10, pady=(25,10))
+
         self.update_map_position()
 
     def update_map_position(self):
+        loader = tkintermapview.OfflineLoader(path=self.offline_map_db_path)
+
         self.map_widget.set_position(self.trip_coords[self.current_stop_seq][0],
                                      self.trip_coords[self.current_stop_seq][1])
         self.map_widget.set_marker(self.trip_coords[self.current_stop_seq][0],
                                      self.trip_coords[self.current_stop_seq][1],
                                    text=self.trip_stops[self.current_stop_seq], font=('Arial', 40))
+        self.offline_map_controller(loader)
+
+    def offline_map_controller(self, loader):
+        current_position = self.map_widget.get_position()
+        top_left_corner = osm_to_decimal(self.map_widget.upper_left_tile_pos[0],
+                                         self.map_widget.upper_left_tile_pos[1], round(self.map_widget.zoom))
+        bot_right_corner = osm_to_decimal(self.map_widget.lower_right_tile_pos[0],
+                                          self.map_widget.lower_right_tile_pos[1], round(self.map_widget.zoom))
+        old_stdout = sys.stdout
+        new_stdout = io.StringIO()
+        sys.stdout = new_stdout
+        loader.print_loaded_sections()
+        sys.stdout = old_stdout
+        tiles = new_stdout.getvalue()
+        if not str(bot_right_corner) + '\', 17, 17,' in tiles:
+            print("Tile not in db, checking internet connection.")
+            if self.check_internet_connection():
+                print("Downloading..")
+                loader.save_offline_tiles(top_left_corner, bot_right_corner, 17, 17)
+            else:
+                print("No internet connection.")
 
     def scroll_up(self):
 
@@ -356,4 +411,6 @@ class SubPage2(ctk.CTkFrame):
             text=f'{self.current_stop_seq + 1}. {self.trip_stops[self.current_stop_seq + 0]}')
         self.stop_name3_label.configure(
             text=f'{self.current_stop_seq + 2}. {self.trip_stops[self.current_stop_seq + 1]}')
+
+
 
