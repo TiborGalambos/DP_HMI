@@ -9,6 +9,7 @@ import io
 import sys
 
 import GLOBAL_VARS
+from CommunicationManager import CommunicationManager
 from DatabaseManager import DatabaseManager
 import tkintermapview
 
@@ -66,7 +67,6 @@ class SubPage2(ctk.CTkFrame):
         self.map_widget.set_position(43.19781111111, 17.306139)
 
         self.stops_box_position = 1
-
 
     def check_internet_connection(self):
         try:
@@ -223,6 +223,12 @@ class SubPage2(ctk.CTkFrame):
         self.delay_label = ctk.CTkLabel(self.fourth_row_container, text='Aktuálne meškanie vlaku: 0. min', font=('Arial', 20))
         self.delay_label.grid(row=0, column=0, sticky='nw', padx=10, pady=(25,10))
 
+        communication = CommunicationManager.get_instance()
+        communication.send_route_update(routeID=GLOBAL_VARS.selected_trip_name,
+                                        train_state='before_station',
+                                        remaining_stations=self.trip_stops,
+                                        destination_station=self.trip_stops[-1])
+
         self.update_map_position()
 
     def update_map_position(self):
@@ -257,6 +263,7 @@ class SubPage2(ctk.CTkFrame):
 
     def scroll_up(self):
 
+        communication = CommunicationManager.get_instance()
 
         if self.current_stop_seq == 1:
             # Moving from the second to the first item.
@@ -274,6 +281,12 @@ class SubPage2(ctk.CTkFrame):
             self.before_stop_label1.configure(font=('Arial', 18, 'bold'), text_color='green')
 
             print(f'1up {self.current_stop_seq}')
+
+            communication.send_route_update(routeID=GLOBAL_VARS.selected_trip_name,
+                                            train_state='before_station',
+                                            remaining_stations=self.trip_stops[self.current_stop_seq:],
+                                            destination_station=self.trip_stops[-1])
+
 
         elif self.current_stop_seq == len(self.trip_stops) - 1:
             # If currently at the bottom, highlight the middle label and decrement.
@@ -294,6 +307,11 @@ class SubPage2(ctk.CTkFrame):
 
             print(f'2up {self.current_stop_seq}')
 
+            communication.send_route_update(routeID=GLOBAL_VARS.selected_trip_name,
+                                            train_state='before_station',
+                                            remaining_stations=self.trip_stops[self.current_stop_seq:],
+                                            destination_station=self.trip_stops[-1])
+
         elif self.current_stop_seq > 1:
             # For any position other than the first or last, simply decrement and update labels.
             self.stops_box_position = 1
@@ -311,15 +329,22 @@ class SubPage2(ctk.CTkFrame):
 
             print(f'3up {self.current_stop_seq}')
 
+            communication.send_route_update(routeID=GLOBAL_VARS.selected_trip_name,
+                                            train_state='before_station',
+                                            remaining_stations=self.trip_stops[self.current_stop_seq:],
+                                            destination_station=self.trip_stops[-1])
+
         self.update_map_position()
 
     def scroll_down(self):
 
+        communication = CommunicationManager.get_instance()
 
         if self.stops_box_position == 1 and self.current_stop_seq == 0:
             self.before_stop_label1.configure(font=('Arial', 12), text_color='white')
             self.in_stop_label1.configure(font=('Arial', 18, 'bold'), text_color='green')
             self.stops_box_position += 1
+
             print('1 if')
 
         elif self.stops_box_position == 2 and self.current_stop_seq == 0:
@@ -391,6 +416,25 @@ class SubPage2(ctk.CTkFrame):
         if self.stops_box_position == 4:
             self.stops_box_position = 1
             self.update_map_position()
+
+
+        if self.stops_box_position == 1:
+            train_state = "before_station"
+
+        if self.stops_box_position == 2:
+            train_state = "in_station"
+
+        if self.stops_box_position == 3:
+            train_state = "after_station"
+
+
+
+        communication.send_route_update(routeID=GLOBAL_VARS.selected_trip_name,
+                                        train_state=train_state,
+                                        remaining_stations=self.trip_stops[self.current_stop_seq:],
+                                        destination_station=self.trip_stops[-1])
+
+
 
 
         print(self.current_stop_seq)

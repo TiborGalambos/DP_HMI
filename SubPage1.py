@@ -1,4 +1,5 @@
 import GLOBAL_VARS
+from CommunicationManager import CommunicationManager
 from DatabaseManager import DatabaseManager
 from PIL import Image
 
@@ -14,7 +15,7 @@ class SubPage1(ctk.CTkFrame):
         super().__init__(master)
         self.panel2 = None
         self.panel1 = None
-        self.auto_drive = None
+        self.show_delay = None
         self.db_manager = DatabaseManager()
         self.controller = controller
         self.current_index_trip = 0  # Keep track of the current index of the displayed route
@@ -213,11 +214,6 @@ class SubPage1(ctk.CTkFrame):
 
 
 
-        # self.switch_window()
-
-
-
-
     def switch_window(self):
         self.controller.switch_page("SubPage2")
         # pass
@@ -226,7 +222,7 @@ class SubPage1(ctk.CTkFrame):
 
         self.panel1 = False
         self.panel2 = False
-        self.auto_drive = False
+        self.show_delay = False
 
         if self.is_trip_selected:
 
@@ -244,14 +240,17 @@ class SubPage1(ctk.CTkFrame):
         print(self.switch_setting_3.get(), self.switch_setting_4.get())
 
         if self.switch_setting_3.get() and not self.switch_setting_4.get():
-            print("Drive control: manual")
+            print("Delay_display: ON")
+            self.show_delay = True
 
         elif not self.switch_setting_3.get() and self.switch_setting_4.get():
-            print("Drive control: automatic")
-            self.auto_drive = True
+            print("Delay_display: OFF")
+            self.show_delay = False
+
 
         else:
             print("Something went wrong")
+            pass
 
 
         # self.set_settings_button_state()
@@ -259,6 +258,13 @@ class SubPage1(ctk.CTkFrame):
         self.finish_button.configure(text="Prebieha jazda")
 
         self.switch_window()
+
+        GLOBAL_VARS.selected_trip_name = self.selected_trip_name
+
+        communication = CommunicationManager.get_instance()
+        communication.send_settings(display_1 = self.panel1,
+                                    display_2 = self.panel2,
+                                    show_delay = self.show_delay)
 
 
     def stop(self):
@@ -276,8 +282,7 @@ class SubPage1(ctk.CTkFrame):
         GLOBAL_VARS.active_trip_id = 0
         self.controller.unset_subpage2_map_markers()
         self.finish_button.configure(text="Začať jazdu")
-
-
+        GLOBAL_VARS.selected_trip_name = ''
 
 
     def switch1_callback(self):
@@ -304,8 +309,6 @@ class SubPage1(ctk.CTkFrame):
 
         if self.switch_setting_4.get() == 0:  # If switch4 is checked
             self.switch_setting_3.set(1)  # Uncheck switch3
-
-        # self.switch3_callback()
 
 
     def populate_trips(self):

@@ -15,6 +15,8 @@ from MainPage import MainPage
 from PIL import Image
 fullscreen_mode = False
 
+from CommunicationManager import CommunicationManager
+
 
 class AppMainLayout(ctk.CTk, PageController):
 
@@ -33,6 +35,9 @@ class AppMainLayout(ctk.CTk, PageController):
         }
 
         self.title('HMI')
+
+        communication = CommunicationManager.get_instance()
+        communication.send_basic_message("Dobrý deň")
 
 
         self.grid_rowconfigure(0, weight=0)  # Header row should not expand
