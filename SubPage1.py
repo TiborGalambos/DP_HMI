@@ -256,15 +256,18 @@ class SubPage1(ctk.CTkFrame):
         # self.set_settings_button_state()
         self.finish_button.configure(state=ctk.DISABLED, fg_color="#A9C8A9")  # Darker color when disabled
         self.finish_button.configure(text="Prebieha jazda")
-
-        self.switch_window()
-
         GLOBAL_VARS.selected_trip_name = self.selected_trip_name
 
         communication = CommunicationManager.get_instance()
-        communication.send_settings(display_1 = self.panel1,
-                                    display_2 = self.panel2,
-                                    show_delay = self.show_delay)
+        communication.send_settings(display_1=self.panel1,
+                                    display_2=self.panel2,
+                                    show_delay=self.show_delay)
+
+        print("sleep?")
+
+        self.switch_window()
+
+
 
 
     def stop(self):
