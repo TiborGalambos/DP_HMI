@@ -1,3 +1,4 @@
+import binascii
 import threading
 
 from flask import Flask, request, jsonify
@@ -6,6 +7,7 @@ app = Flask(__name__)
 
 class Controller:
 
+    # display_one_row_on_eth_led_panel = None
     use_display_1 = False
     use_display_2 = False
     train_state = ''
@@ -17,7 +19,7 @@ class Controller:
         data = request.json
         print(data)
 
-        Controller.display_data(data, Controller.use_display_1, Controller.use_display_2, Controller.show_delays)
+        Controller.display_two_row_data(data)
 
         return jsonify({"status": "success", "message": "Route update received"}), 200
 
@@ -46,22 +48,33 @@ class Controller:
     @app.route('/basic_message', methods=['POST'])
     def basic_message():
         message = request.json
+        Controller.display_one_row_data(message)
         print(message)
         return jsonify({"status": "success", "message": "Basic message received"}), 200
 
     @staticmethod
-    @app.route('/reset', methods=['POST'])
-    def reset_route():
-        message = request.json
-        print(message)
+    @app.route('/reset_message', methods=['POST'])
+    def reset_message():
+        # message = request.json
+        Controller.display_one_row_data(' ')
+        # print(message)
 
-        if (message.get('reset')):
-            Controller.use_display_1 = False
-            Controlleruse_display_2 = False
-            Controllershow_delays = False
-            # TODO delete what is displayed on led panels
+        return jsonify({"status": "success", "message": "Reset message received"}), 200
 
-        return jsonify({"status": "success", "message": "Basic message received"}), 200
+
+    # @staticmethod
+    # @app.route('/reset', methods=['POST'])
+    # def reset_route():
+    #     message = request.json
+    #     print(message)
+    #
+    #     if (message.get('reset')):
+    #         Controller.use_display_1 = False
+    #         Controlleruse_display_2 = False
+    #         Controllershow_delays = False
+    #         # TODO delete what is displayed on led panels
+    #
+    #     return jsonify({"status": "success", "message": "Basic message received"}), 200
 
     @staticmethod
     def encode_char(char, rs232):
@@ -70,50 +83,74 @@ class Controller:
         else:
             if rs232:
                 return ''.join([f"{byte:02x}" for byte in char.encode('utf-8')])
+            print("...")
             return ''.join([f"\\{byte:02x}" for byte in char.encode('utf-8')])
 
     @staticmethod
-    def build_xml_command(message_row1, message_row2, lang="sk", font="A", scroll_speed="4", priority="1",
-                           timeout="30", bright="0", update_visualization_mode="Immediate"):
+    def build_two_row_xml_command(message_row1, message_row2, lang="sk", font="A", scroll_speed="4", priority="1",
+                                  timeout="30", bright="0", update_visualization_mode="Immediate"):
 
         # controller_instance = Controller()
-        converted_message_row1 = ''.join([Controller.encode_char(char, 0) for char in message_row1])
-        converted_message_row2 = ''.join([Controller.encode_char(char, 0) for char in message_row2])
+        # converted_message_row1 = ''.join([Controller.encode_char(char, 0) for char in message_row1])
+        # converted_message_row2 = ''.join([Controller.encode_char(char, 0) for char in message_row2])
 
-        xml_command = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\r\\n" \
-                      "<Message Type=\"Aesys-PID\">\\r\\n" \
-                      f"<Command Type=\"Stop\" IdCmd=\"1235\" Priority=\"{priority}\" Bright=\"{bright}\" ScrollSpeed=\"{scroll_speed}\" UpdateVisualizationMode=\"{update_visualization_mode}\" Timeout=\"{timeout}\">\\r\\n" \
-                      "<TripData DoorState=\"close\" TrainArea=\"InStop\"/>\\r\\n" \
-                      "<Texts>\\r\\n" \
-                      "<Text1>\\r\\n" \
-                      "<Languages>\\r\\n" \
-                      f"<Language Code=\"{lang}\" Font=\"{font}\">{converted_message_row1}</Language>\\r\\n" \
-                      "</Languages>\\r\\n" \
-                      "</Text1>\\r\\n" \
-                      "<Text2>\\r\\n" \
-                      "<Languages>\\r\\n" \
-                      f"<Language Code=\"{lang}\" Font=\"{font}\">{converted_message_row2}</Language>\\r\\n" \
-                      "</Languages>\\r\\n" \
-                      "</Text2>\\r\\n" \
-                      "</Texts>\\r\\n" \
-                      "</Command>\\r\\n" \
+        xml_command = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" \
+                      "<Message Type=\"Aesys-PID\">\r\n" \
+                      f"<Command Type=\"Stop\" IdCmd=\"1235\" Priority=\"{priority}\" Bright=\"{bright}\" ScrollSpeed=\"{scroll_speed}\" UpdateVisualizationMode=\"{update_visualization_mode}\" Timeout=\"{timeout}\">\r\n" \
+                      "<TripData DoorState=\"close\" TrainArea=\"InStop\"/>\r\n" \
+                      "<Texts>\r\n" \
+                      "<Text1>\r\n" \
+                      "<Languages>\r\n" \
+                      f"<Language Code=\"{lang}\" Font=\"{font}\">{message_row1}</Language>\r\n" \
+                      "</Languages>\r\n" \
+                      "</Text1>\r\n" \
+                      "<Text2>\r\n" \
+                      "<Languages>\r\n" \
+                      f"<Language Code=\"{lang}\" Font=\"{font}\">{message_row2}</Language>\r\n" \
+                      "</Languages>\r\n" \
+                      "</Text2>\r\n" \
+                      "</Texts>\r\n" \
+                      "</Command>\r\n" \
                       "</Message>"
 
         return xml_command
 
     @staticmethod
-    def send_udp_command(ip_address, port, command, buffer_size=1024, timeout=1):
+    def build_one_row_xml_command(message, lang="sk", font="A", scroll_speed="4", priority="1",
+                                  timeout="30", bright="0", update_visualization_mode="Immediate"):
+
+        xml_command = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" \
+                      "<Message Type=\"Aesys-PID\">\r\n" \
+                      f"<Command Type=\"Stop\" IdCmd=\"1235\" Priority=\"{priority}\" Bright=\"{bright}\" ScrollSpeed=\"{scroll_speed}\" UpdateVisualizationMode=\"{update_visualization_mode}\" Timeout=\"{timeout}\">\r\n" \
+                      "<TripData DoorState=\"close\" TrainArea=\"InStop\"/>\r\n" \
+                      "<Texts>\r\n" \
+                      "<Text1>\r\n" \
+                      "<Languages>\r\n" \
+                      f"<Language Code=\"{lang}\" Font=\"{font}\">{message}</Language>\r\n" \
+                      "</Languages>\r\n" \
+                      "</Text1>\r\n" \
+                      "</Texts>\r\n" \
+                      "</Command>\r\n" \
+                      "</Message>"
+
+        return xml_command
+
+    @staticmethod
+    def send_udp_command(ip_address, port, command, buffer_size=1024, timeout=5):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.settimeout(timeout)
-            sock.sendto(command.encode(), (ip_address, port))
+            hex_command = command.encode()
+            print("hex comm", hex_command)
+            sock.sendto(hex_command, (ip_address, port))  # Send hex data
             try:
                 response, _ = sock.recvfrom(buffer_size)
                 print("Received response from the panel:")
-                print(response.decode())
+                print(response.decode())  # Assuming response is also in text format
             except socket.timeout:
                 print("No response received within the timeout period.")
 
-    def display_on_eth_led_panel(self, data):
+
+    def display_two_row_on_eth_led_panel(self, data):
         print("eth")
 
         routeID = data.get('routeID')
@@ -124,11 +161,11 @@ class Controller:
 
         message_row1 = destination_station
         message_row2 = "cez " + ', '.join(remaining_stations)
-        xml_command = Controller.build_xml_command(message_row1, message_row2, lang="sk", font="B", scroll_speed="5")
-        print(xml_command)
+        xml_command = Controller.build_two_row_xml_command(message_row1, message_row2, lang="sk", font="B", scroll_speed="5")
+        print("xml command:", xml_command)
 
-        panel_ip = "192.168.1.100"
-        panel_port = 4000
+        panel_ip = "172.16.4.121"
+        panel_port = 80
 
         Controller.send_udp_command(panel_ip, panel_port, xml_command)
 
@@ -196,10 +233,8 @@ class Controller:
         return
 
 
-
-
     @staticmethod
-    def display_data(data):
+    def display_two_row_data(data):
         threads = []
 
         controller_instance = Controller()
@@ -207,7 +242,7 @@ class Controller:
         print(Controller.use_display_1, Controller.use_display_2)
 
         if Controller.use_display_1:
-            ethernet_thread = threading.Thread(target=Controller.display_on_eth_led_panel, args=(controller_instance, data,))
+            ethernet_thread = threading.Thread(target=Controller.display_two_row_on_eth_led_panel, args=(controller_instance, data,))
             ethernet_thread.start()
             threads.append(ethernet_thread)
 
@@ -232,6 +267,54 @@ class Controller:
             print("no communication")
 
 
+
+    # @staticmethod
+    def display_one_row_on_eth_led_panel(self, message_data):
+
+        print("eth")
+        if message_data is ' ':
+            message = ''
+        else:
+            message = message_data.get('message')
+        # remaining_stations = message.get('remaining_route_stations')
+        # destination_station = message.get('destination_station')
+        # Controller.train_state = message.get('state')
+        # train_delay = message.get('delay')
+
+        message_row1 = message
+        xml_command = Controller.build_one_row_xml_command(message_row1, lang="sk", font="B",
+                                                           scroll_speed="5")
+        print("xml command:", xml_command)
+
+        panel_ip = "172.16.4.121"
+        panel_port = 80
+
+        Controller.send_udp_command(panel_ip, panel_port, xml_command)
+
+        return
+
+    @staticmethod
+    def display_one_row_data(message):
+        threads = []
+
+        controller_instance = Controller()
+
+        print(Controller.use_display_1, Controller.use_display_2)
+
+        ethernet_thread = threading.Thread(target=Controller.display_one_row_on_eth_led_panel,
+                                           args=(controller_instance, message,))
+        ethernet_thread.start()
+        threads.append(ethernet_thread)
+
+        # rs232_thread = threading.Thread(target=Controller.display_one_row_on_rs232_led_panel,
+        #                                 args=(controller_instance, message,))
+        # rs232_thread.start()
+        # threads.append(rs232_thread)
+
+        for thread in threads:
+            thread.join(timeout=10)
+
+        print("ethernet and RS232")
 
 
 if __name__ == '__main__':

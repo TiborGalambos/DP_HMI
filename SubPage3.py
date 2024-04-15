@@ -2,6 +2,8 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
+from CommunicationManager import CommunicationManager
+
 
 class SubPage3(ctk.CTkFrame):
     def __init__(self, master, controller):
@@ -43,11 +45,11 @@ class SubPage3(ctk.CTkFrame):
         # Add buttons in a 3x3 grid, but only create 7 buttons
         for btn_id in range(7):
             row, col = divmod(btn_id, 3)
-            btn = ctk.CTkButton(self.settings_container, text=f"Button {btn_id + 1}",
+            text = f"Button {btn_id + 1}"
+            btn = ctk.CTkButton(self.settings_container, text=text,
                                 command=lambda b=btn_id: self.button_clicked(b), fg_color="#144870")
             btn.grid(row=row + 2, column=col, pady=20, padx=30, sticky="nsew", ipady=60, ipadx=40)
-            self.buttons[btn_id] = btn  # Store the button reference
-
+            self.buttons[btn_id] = (btn, text)  # Store both the button and its text
 
         # Add a reset button below the 3x3 grid
         self.reset_btn = ctk.CTkButton(self.settings_container, text="Ukončiť mimoriadnu správu", command=self.reset_selection, font=("Arial", 20), fg_color="green")
@@ -61,27 +63,37 @@ class SubPage3(ctk.CTkFrame):
         self.configure_button_text(5, "Vozidlo preťažené")
         self.configure_button_text(6, "Núdzová brzda aktivovaná")
 
-
     def button_clicked(self, btn_id):
-        # Reset the previously selected button
         if self.selected_button is not None:
-            self.selected_button.configure(fg_color="#144870")  # Reset to default color
+            self.selected_button[0].configure(fg_color="#144870")  # Reset to default color using index 0 for the button
 
         # Update the selected button and change its appearance
         self.selected_button = self.buttons[btn_id]
-        self.selected_button.configure(fg_color="#0c2b43")  # Set to a darker color to indicate selection
-        print(f"Button {btn_id + 1} was pressed")
+        self.selected_button[0].configure(fg_color="#0c2b43")  # Set to a darker color to indicate selection
+
+        # Access button text stored as part of the tuple
+        button_text = self.selected_button[1]  # Using index 1 for the text
+        # print(f"Button {btn_id + 1} with text '{button_text}' was pressed")
+        com_man = CommunicationManager.get_instance()
+        com_man.send_basic_message(button_text)
+
 
     def reset_selection(self):
         if self.selected_button is not None:
-            self.selected_button.configure(fg_color="#144870")  # Reset to default color
+            button, _ = self.selected_button  # Unpack the tuple to get the button object
+            button.configure(fg_color="#144870")  # Reset to default color using the button object
             self.selected_button = None
             print("Selection reset")
+            com_man = CommunicationManager.get_instance()
+            com_man.send_basic_message(' ')
+
 
     def configure_button_text(self, btn_id, text):
         """Configure the text of a button given its ID."""
         if btn_id in self.buttons:
-            self.buttons[btn_id].configure(text=text, font=("Arial", 30))
+            button, _ = self.buttons[btn_id]  # Unpack the tuple to get the button object
+            button.configure(text=text, font=("Arial", 30))  # Configure the button
+            self.buttons[btn_id] = (button, text)  # Update the tuple with new text
         else:
             print(f"Button with ID {btn_id} not found")
 

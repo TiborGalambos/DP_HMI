@@ -57,3 +57,8 @@ class CommunicationManager:
         response = requests.post(url, json=payload)
         print(response.json())
 
+    def reset_message(self):
+        url = 'http://127.0.0.1:5555/reset_message'
+        response = requests.post(url)
+        print(response.json())
+
