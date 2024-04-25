@@ -1,5 +1,8 @@
 import binascii
 import threading
+import time
+from unidecode import unidecode
+import serial
 
 from flask import Flask, request, jsonify
 import socket
@@ -11,6 +14,8 @@ class Controller:
     use_display_1 = False
     use_display_2 = False
     train_state = ''
+
+    ser = None
 
     show_delays = False
     @staticmethod
@@ -169,7 +174,48 @@ class Controller:
 
         Controller.send_udp_command(panel_ip, panel_port, xml_command)
 
-        # TODO
+        # TODO? neviem co
+        return
+
+
+
+    def display_two_row_on_rs232_ibis_panel(self, data):
+        # print("eth")
+
+        routeID = data.get('routeID')
+        remaining_stations = data.get('remaining_route_stations')
+        destination_station = data.get('destination_station')
+        Controller.train_state = data.get('state')
+        train_delay = data.get('delay')
+
+        message_row1 = destination_station
+        # message_row2 = "cez " + ', '.join(remaining_stations)
+        Controller.format_message_for_two_row_rs232(message_row1, remaining_stations)
+        # message = Controller.format_message_for_two_row_rs232(message_row1, message_row2)
+        # print("rs232 command ", message)
+
+        # message = Controller.format_message_for_two_row_rs232("Bratislava", "cez Banská Bystrica – Košice – Poprad")
+        # print('rs232 message', message)
+
+        # ser = serial.Serial(port='COM3', baudrate=1200, bytesize=serial.SEVENBITS, parity=serial.PARITY_EVEN,
+        #                     stopbits=serial.STOPBITS_TWO, timeout=1)
+        #
+        # if not ser.is_open:
+        #     print("opening")
+        #     ser.open()
+        #
+        # ser.write(message)
+        #
+        # response = ser.read()
+        # if response:
+        #     print('Received:', response.decode())
+        # else:
+        #     print('No response received.')
+
+        # printable_command = " ".join(f"{byte:02X}" for byte in formatted_command)
+        # print("printable command ", printable_command)
+
+
         return
 
     @staticmethod
@@ -180,57 +226,148 @@ class Controller:
         checksum &= 0x7F
         return checksum
 
-    @staticmethod
-    def format_message(upper_row, lower_row):
-        encoded_upper_row = ''.join([Controller.encode_char(char, 1) for char in upper_row])
-        encoded_lower_row = ''.join([Controller.encode_char(char, 1) for char in lower_row])
-        # Convert textual representations of control characters to their binary equivalents
-        control_chars = {
-            '#1B': b'\x1B',  # prefix?
-            '#E3': b'\xE3',  # font selection
-            '#21': b'\x21',  # character spacing
-            '#30': b'\x30',  # vertical positioning
-            '#0A': b'\x0A',  # new line
-            '#0B': b'\x0B',  # running text
-            '#0D': b'\x0D',  # end code
-        }
 
-        # Base command with placeholders, without spaces and with binary control characters
-        base_command = b'aA1' + control_chars['#1B'] + b"x" + control_chars['#E3'] + control_chars['#21'] + \
-                       control_chars['#30'] + \
-                       encoded_upper_row.encode() + control_chars['#0A'] + control_chars['#1B'] + b"x" + control_chars[
-                           '#1B'] + b"d" + \
-                       b'\x10' + control_chars['#1B'] + b"h" + b'\x19' + control_chars['#E3'] + control_chars['#21'] + \
-                       control_chars['#1B'] + \
-                       b"t" + b'\x11' + encoded_lower_row.encode() + control_chars['#0B']
+    # !!!!! this is in use
+    # @staticmethod
+    # def format_message(upper_row, lower_row):
+    #     encoded_upper_row = ''.join([Controller.encode_char(char, 1) for char in upper_row])
+    #     encoded_lower_row = ''.join([Controller.encode_char(char, 1) for char in lower_row])
+    #     # Convert textual representations of control characters to their binary equivalents
+    #     control_chars = {
+    #         '#1B': b'\x1B',  # prefix?
+    #         '#E3': b'\xE3',  # font selection
+    #         '#21': b'\x21',  # character spacing
+    #         '#30': b'\x30',  # vertical positioning
+    #         '#0A': b'\x0A',  # new line
+    #         '#0B': b'\x0B',  # running text
+    #         '#0D': b'\x0D',  # end code
+    #     }
+    #
+    #     # Base command with placeholders, without spaces and with binary control characters
+    #     base_command = b'aA1' + control_chars['#1B'] + b"x" + control_chars['#E3'] + control_chars['#21'] + \
+    #                    control_chars['#30'] + \
+    #                    encoded_upper_row.encode() + control_chars['#0A'] + control_chars['#1B'] + b"x" + control_chars[
+    #                        '#1B'] + b"d" + \
+    #                    b'\x10' + control_chars['#1B'] + b"h" + b'\x19' + control_chars['#E3'] + control_chars['#21'] + \
+    #                    control_chars['#1B'] + \
+    #                    b"t" + b'\x11' + encoded_lower_row.encode() + control_chars['#0B']
+    #
+    #     checksum = Controller.calculate_checksum(base_command)
+    #
+    #     full_command = base_command + bytes([checksum]) + control_chars['#0D']
+    #
+    #     return full_command
 
-        checksum = Controller.calculate_checksum(base_command)
-
-        full_command = base_command + bytes([checksum]) + control_chars['#0D']
-
-        return full_command
-
-    def display_on_rs232_led_panel(self, data):
-        print("rs232")
-
-        routeID = data.get('routeID')
-        remaining_stations = data.get('remaining_route_stations')
-        destination_station = data.get('destination_station')
-        Controller.train_state = data.get('state')
-        train_delay = data.get('delay')
-
-
-        message_row1 = destination_station
-        message_row2 = "cez " + ', '.join(remaining_stations)
-        formatted_command = Controller.format_message(message_row1, message_row2)
-        print(formatted_command)
-
-        printable_command = " ".join(f"{byte:02X}" for byte in formatted_command)
-        print(printable_command)
+    # def display_on_rs232_led_panel(self, data):
+    #     print("rs232")
+    #
+    #     routeID = data.get('routeID')
+    #     remaining_stations = data.get('remaining_route_stations')
+    #     destination_station = data.get('destination_station')
+    #     Controller.train_state = data.get('state')
+    #     train_delay = data.get('delay')
+    #
+    #
+    #     message_row1 = destination_station
+    #     message_row2 = "cez " + ', '.join(remaining_stations)
+    #     formatted_command = Controller.format_message(message_row1, message_row2)
+    #     print(formatted_command)
+    #
+    #     printable_command = " ".join(f"{byte:02X}" for byte in formatted_command)
+    #     print(printable_command)
 
         #dorobit posielanie na serial com port. formatted_command neviem ci je to spravne
 
-        return
+        # return
+
+    @staticmethod
+    def format_message_for_two_row_rs232(upper_row, lower_row_stops):
+
+        message_upper = f"aA1 {unidecode(upper_row)}"
+
+        message_upper += '\x0D'
+
+        if Controller.ser is None:
+            ser = serial.Serial(port='COM3', baudrate=1200, bytesize=serial.SEVENBITS, parity=serial.PARITY_EVEN,
+                            stopbits=serial.STOPBITS_TWO, timeout=3)
+            Controller.ser = ser
+        else:
+            ser = Controller.ser
+
+        message = message_upper.encode()
+        checksum = 0
+        for byte in message:
+            checksum ^= byte
+        checksum = 0x7F & ~checksum
+        checksum_byte = chr(checksum).encode()
+        message += checksum_byte
+        message += b'\r'
+
+        try:
+
+            print(message)
+            ser.write(message)
+
+            time.sleep(1)
+
+            response = ser.read()
+            if response:
+                print('Received:', response.decode())
+            else:
+                print('No response received.')
+
+
+
+        except serial.SerialException as e:
+            print(f"Error: {e}")
+
+        finally:
+            if ser.is_open:
+                print("closing")
+                # ser.close()
+
+        i = 0
+
+        for lower_row in lower_row_stops:
+            if i == 0:
+
+                lower_row = 'cez ' + lower_row
+            i += 1
+
+            message = f'aA1 \x0A\x1Bx\x1Bd\x10\x1Bh\x19\x1Bt\x11{unidecode(lower_row)}\x0D'
+
+            # time.sleep(1)
+
+            print("from cycle:", lower_row)
+
+            message = message.encode()
+            checksum = 0
+            for byte in message:
+                checksum ^= byte
+            checksum = 0x7F & ~checksum
+            checksum_byte = chr(checksum).encode()
+            message += checksum_byte
+            message += b'\r'
+
+            try:
+
+                print(message)
+                ser.write(message)
+
+                time.sleep(2)
+
+                response = ser.read()
+                if response:
+                    print('Received:', response.decode())
+                else:
+                    print('No response received.')
+
+
+
+            except serial.SerialException as e:
+                print(f"Error: {e}")
+
+
 
 
     @staticmethod
@@ -248,23 +385,21 @@ class Controller:
 
 
         if Controller.use_display_2:
-            rs232_thread = threading.Thread(target=Controller.display_on_rs232_led_panel, args=(controller_instance, data,))
+            rs232_thread = threading.Thread(target=Controller.display_two_row_on_rs232_ibis_panel, args=(controller_instance, data,))
             rs232_thread.start()
             threads.append(rs232_thread)
 
         for thread in threads:
-            thread.join(timeout=10)
-
-
-
-        if Controller.use_display_1 and Controller.use_display_2:
-            print("ethernet and RS232")
-        elif Controller.use_display_1:
-            print("only ethernet")
-        elif Controller.use_display_2:
-            print("rS232")
-        else:
-            print("no communication")
+            thread.join(timeout=1)
+        #
+        # if Controller.use_display_1 and Controller.use_display_2:
+        #     print("ethernet and RS232")
+        # elif Controller.use_display_1:
+        #     print("only ethernet")
+        # elif Controller.use_display_2:
+        #     print("rS232")
+        # else:
+        #     print("no communication")
 
 
 
@@ -272,7 +407,7 @@ class Controller:
     def display_one_row_on_eth_led_panel(self, message_data):
 
         print("eth")
-        if message_data is ' ':
+        if message_data == ' ':
             message = ''
         else:
             message = message_data.get('message')
@@ -294,27 +429,84 @@ class Controller:
         return
 
     @staticmethod
+    def display_one_row_on_rs232_led_panel(upper_row):
+
+        print("one row", upper_row)
+
+        message = str(upper_row)
+
+        message += '\x0D'
+
+        print('RS232 message:', message)
+
+        if Controller.ser is None:
+            ser = serial.Serial(port='COM3', baudrate=1200, bytesize=serial.SEVENBITS, parity=serial.PARITY_EVEN,
+                                stopbits=serial.STOPBITS_TWO, timeout=3)
+            Controller.ser = ser
+        else:
+            ser = Controller.ser
+
+        # Calculate checksum (simple exclusive OR of bytes)
+        message = message.encode()
+
+        checksum = 0
+        for byte in message:
+            checksum ^= byte
+
+        # Apply mask and NOT operation to the checksum
+        checksum = 0x7F & ~checksum
+
+        # Convert checksum to a character and then encode it to bytes
+        checksum_byte = chr(checksum).encode()
+
+        message += checksum_byte
+
+        message += b'\r'  # Carriage return as a byte
+
+        try:
+
+            print(message)
+            ser.write(message)
+
+            time.sleep(1)
+
+            response = ser.read()
+            if response:
+                print('Received:', response.decode())
+            else:
+                print('No response received.')
+
+        except serial.SerialException as e:
+            print(f"Error: {e}")
+
+        finally:
+            if ser.is_open:
+                print("closing")
+
+
+    @staticmethod
     def display_one_row_data(message):
         threads = []
 
         controller_instance = Controller()
 
         print(Controller.use_display_1, Controller.use_display_2)
+        if Controller.use_display_1:
+            ethernet_thread = threading.Thread(target=Controller.display_one_row_on_eth_led_panel,
+                                               args=(controller_instance, message,))
+            ethernet_thread.start()
+            threads.append(ethernet_thread)
 
-        ethernet_thread = threading.Thread(target=Controller.display_one_row_on_eth_led_panel,
-                                           args=(controller_instance, message,))
-        ethernet_thread.start()
-        threads.append(ethernet_thread)
-
-        # rs232_thread = threading.Thread(target=Controller.display_one_row_on_rs232_led_panel,
-        #                                 args=(controller_instance, message,))
-        # rs232_thread.start()
-        # threads.append(rs232_thread)
+        if Controller.use_display_2:
+            rs232_thread = threading.Thread(target=Controller.display_one_row_on_rs232_led_panel,
+                                        args=(message,))
+            rs232_thread.start()
+            threads.append(rs232_thread)
 
         for thread in threads:
-            thread.join(timeout=10)
+            thread.join(timeout=1)
 
-        print("ethernet and RS232")
+        # print("ethernet and RS232")
 
 
 if __name__ == '__main__':

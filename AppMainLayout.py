@@ -37,7 +37,10 @@ class AppMainLayout(ctk.CTk, PageController):
         self.title('HMI')
 
         communication = CommunicationManager.get_instance()
-        communication.send_basic_message("Dobrý deň")
+        try:
+            communication.send_basic_message("Dobrý deň")
+        except:
+            pass
 
 
         self.grid_rowconfigure(0, weight=0)  # Header row should not expand

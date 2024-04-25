@@ -19,7 +19,10 @@ class CommunicationManager:
             CommunicationManager._instance = self
 
         self.use_display_1 = False
-        self.user_display_2 = False
+        self.use_display_2 = False
+
+    def get_display_usage(self):
+        return self.use_display_1, self.use_display_2
 
     def send_route_update(self, routeID, remaining_stations, destination_station, train_state, delay = 0):
         url = 'http://127.0.0.1:5555/route_update'
@@ -28,7 +31,9 @@ class CommunicationManager:
             "remaining_route_stations": remaining_stations,
             "destination_station": destination_station,
             "state": train_state,
-            "delay": delay
+            "delay": delay,
+            "display_1": self.use_display_1,
+            "display_2": self.use_display_2
         }
 
         response = requests.post(url, json=payload)
@@ -42,6 +47,8 @@ class CommunicationManager:
             "display_2": display_2,
             "show_delay": show_delay
         }
+        self.use_display_1 = display_1
+        self.use_display_2 = display_2
         response = requests.post(url, json=payload)
         print(response.json())
 

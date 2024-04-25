@@ -263,7 +263,7 @@ class SubPage1(ctk.CTkFrame):
                                     display_2=self.panel2,
                                     show_delay=self.show_delay)
 
-        print("sleep?")
+        # print("sleep?")
 
         self.switch_window()
 
