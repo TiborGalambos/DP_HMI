@@ -85,7 +85,7 @@ class SubPage3(ctk.CTkFrame):
             self.selected_button = None
             print("Selection reset")
             com_man = CommunicationManager.get_instance()
-            com_man.send_basic_message(' ')
+            com_man.reset_message()
 
 
     def configure_button_text(self, btn_id, text):

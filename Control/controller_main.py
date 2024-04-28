@@ -1,6 +1,8 @@
 import binascii
 import threading
 import time
+from datetime import datetime
+
 from unidecode import unidecode
 import serial
 
@@ -8,19 +10,38 @@ from flask import Flask, request, jsonify
 import socket
 app = Flask(__name__)
 
+
+
+
+
 class Controller:
 
     # display_one_row_on_eth_led_panel = None
     use_display_1 = False
-    use_display_2 = False
+    use_display_2 = True
     train_state = ''
 
     ser = None
+    # stop_threads_checked = False
+
+    stop_threads = False
+    threads = []
 
     show_delays = False
+
+
     @staticmethod
     @app.route('/route_update', methods=['POST'])
     def route_update():
+
+
+        for thread in Controller.threads:
+            thread.join(timeout=0.5)
+
+        Controller.stop_threads = False
+
+        Controller.threads = []
+
         data = request.json
         print(data)
 
@@ -60,9 +81,21 @@ class Controller:
     @staticmethod
     @app.route('/reset_message', methods=['POST'])
     def reset_message():
-        # message = request.json
-        Controller.display_one_row_data(' ')
-        # print(message)
+
+        current_date = datetime.now()
+        date_str = current_date.strftime("%d.%m.%Y")
+        # Controller.display_one_row_data(date_str, reset_message = True)
+
+        Controller.reset_rs232(date_str)
+
+        Controller.stop_threads = True
+        for thread in Controller.threads:
+            thread.join(timeout=1)
+
+        Controller.stop_threads = False
+        Controller.threads = []
+
+        # time.sleep(1)
 
         return jsonify({"status": "success", "message": "Reset message received"}), 200
 
@@ -80,6 +113,48 @@ class Controller:
     #         # TODO delete what is displayed on led panels
     #
     #     return jsonify({"status": "success", "message": "Basic message received"}), 200
+
+    @staticmethod
+    def reset_rs232(upper_row):
+        ser = Controller.rs232_display_upper(upper_row)
+        i = 0
+
+        lower_row = ' '
+
+        if Controller.stop_threads:
+            return
+
+        message = f'aA1 \x0A\x1Bx\x1Bd\x10\x1Bh\x19\x1Bt\x11{unidecode(lower_row)}\x0D'
+
+        print("from cycle:", lower_row)
+
+        message = message.encode()
+        checksum = 0
+        for byte in message:
+            checksum ^= byte
+        checksum = 0x7F & ~checksum
+        checksum_byte = chr(checksum).encode()
+        message += checksum_byte
+        message += b'\r'
+
+        try:
+            print(message)
+            ser.write(message)
+            if Controller.stop_threads:
+                return
+            time.sleep(1)
+            if Controller.stop_threads:
+                return
+            response = ser.read()
+            if response:
+                print('Received:', response.decode())
+            else:
+                print('No response received.')
+
+        except serial.SerialException as e:
+            print(f"Error: {e}")
+
+
 
     @staticmethod
     def encode_char(char, rs232):
@@ -189,32 +264,7 @@ class Controller:
         train_delay = data.get('delay')
 
         message_row1 = destination_station
-        # message_row2 = "cez " + ', '.join(remaining_stations)
-        Controller.format_message_for_two_row_rs232(message_row1, remaining_stations)
-        # message = Controller.format_message_for_two_row_rs232(message_row1, message_row2)
-        # print("rs232 command ", message)
-
-        # message = Controller.format_message_for_two_row_rs232("Bratislava", "cez Banská Bystrica – Košice – Poprad")
-        # print('rs232 message', message)
-
-        # ser = serial.Serial(port='COM3', baudrate=1200, bytesize=serial.SEVENBITS, parity=serial.PARITY_EVEN,
-        #                     stopbits=serial.STOPBITS_TWO, timeout=1)
-        #
-        # if not ser.is_open:
-        #     print("opening")
-        #     ser.open()
-        #
-        # ser.write(message)
-        #
-        # response = ser.read()
-        # if response:
-        #     print('Received:', response.decode())
-        # else:
-        #     print('No response received.')
-
-        # printable_command = " ".join(f"{byte:02X}" for byte in formatted_command)
-        # print("printable command ", printable_command)
-
+        Controller.format_message_for_two_row_rs232(message_row1, remaining_stations, Controller.train_state)
 
         return
 
@@ -226,117 +276,215 @@ class Controller:
         checksum &= 0x7F
         return checksum
 
-
-    # !!!!! this is in use
-    # @staticmethod
-    # def format_message(upper_row, lower_row):
-    #     encoded_upper_row = ''.join([Controller.encode_char(char, 1) for char in upper_row])
-    #     encoded_lower_row = ''.join([Controller.encode_char(char, 1) for char in lower_row])
-    #     # Convert textual representations of control characters to their binary equivalents
-    #     control_chars = {
-    #         '#1B': b'\x1B',  # prefix?
-    #         '#E3': b'\xE3',  # font selection
-    #         '#21': b'\x21',  # character spacing
-    #         '#30': b'\x30',  # vertical positioning
-    #         '#0A': b'\x0A',  # new line
-    #         '#0B': b'\x0B',  # running text
-    #         '#0D': b'\x0D',  # end code
-    #     }
-    #
-    #     # Base command with placeholders, without spaces and with binary control characters
-    #     base_command = b'aA1' + control_chars['#1B'] + b"x" + control_chars['#E3'] + control_chars['#21'] + \
-    #                    control_chars['#30'] + \
-    #                    encoded_upper_row.encode() + control_chars['#0A'] + control_chars['#1B'] + b"x" + control_chars[
-    #                        '#1B'] + b"d" + \
-    #                    b'\x10' + control_chars['#1B'] + b"h" + b'\x19' + control_chars['#E3'] + control_chars['#21'] + \
-    #                    control_chars['#1B'] + \
-    #                    b"t" + b'\x11' + encoded_lower_row.encode() + control_chars['#0B']
-    #
-    #     checksum = Controller.calculate_checksum(base_command)
-    #
-    #     full_command = base_command + bytes([checksum]) + control_chars['#0D']
-    #
-    #     return full_command
-
-    # def display_on_rs232_led_panel(self, data):
-    #     print("rs232")
-    #
-    #     routeID = data.get('routeID')
-    #     remaining_stations = data.get('remaining_route_stations')
-    #     destination_station = data.get('destination_station')
-    #     Controller.train_state = data.get('state')
-    #     train_delay = data.get('delay')
-    #
-    #
-    #     message_row1 = destination_station
-    #     message_row2 = "cez " + ', '.join(remaining_stations)
-    #     formatted_command = Controller.format_message(message_row1, message_row2)
-    #     print(formatted_command)
-    #
-    #     printable_command = " ".join(f"{byte:02X}" for byte in formatted_command)
-    #     print(printable_command)
-
-        #dorobit posielanie na serial com port. formatted_command neviem ci je to spravne
-
-        # return
-
     @staticmethod
-    def format_message_for_two_row_rs232(upper_row, lower_row_stops):
+    def format_message_for_two_row_rs232(upper_row, lower_row_stops, state):
 
-        message_upper = f"aA1 {unidecode(upper_row)}"
+        print("current state:", state)
 
-        message_upper += '\x0D'
+        sleep_between_show = 1
 
-        if Controller.ser is None:
-            ser = serial.Serial(port='COM3', baudrate=1200, bytesize=serial.SEVENBITS, parity=serial.PARITY_EVEN,
-                            stopbits=serial.STOPBITS_TWO, timeout=3)
-            Controller.ser = ser
-        else:
-            ser = Controller.ser
+        if state == 'in_station':
+            # cycling:
+            # 1.
+            # dest station
+            # cez stanice
+            # 2.
+            # Meskanie
+            # x min.
+            # 3.
+            # dest station
+            # os x
+            # 4.
+            # Odchod o
+            # x min.
 
-        message = message_upper.encode()
-        checksum = 0
-        for byte in message:
-            checksum ^= byte
-        checksum = 0x7F & ~checksum
-        checksum_byte = chr(checksum).encode()
-        message += checksum_byte
-        message += b'\r'
+            lower_row_stops.pop(0)
 
-        try:
+            while not Controller.stop_threads:
 
-            print(message)
-            ser.write(message)
-
-            time.sleep(1)
-
-            response = ser.read()
-            if response:
-                print('Received:', response.decode())
-            else:
-                print('No response received.')
+                # first cycle
+                ser = Controller.rs232_display_upper(upper_row)
+                i = 0
 
 
+                for lower_row in lower_row_stops:
+                    if Controller.stop_threads:
+                        return
+                    if i == 0:
+                        lower_row = 'cez ' + lower_row
 
-        except serial.SerialException as e:
-            print(f"Error: {e}")
+                    i += 1
 
-        finally:
-            if ser.is_open:
-                print("closing")
-                # ser.close()
+                    message = f'aA1 \x0A\x1Bx\x1Bd\x10\x1Bh\x19\x1Bt\x11{unidecode(lower_row)}\x0D'
 
-        i = 0
+                    print("from cycle:", lower_row)
 
-        for lower_row in lower_row_stops:
-            if i == 0:
+                    message = message.encode()
+                    if Controller.stop_threads:
+                        return
+                    checksum = 0
+                    for byte in message:
+                        if Controller.stop_threads:
+                            return
+                        checksum ^= byte
+                    if Controller.stop_threads:
+                        return
+                    checksum = 0x7F & ~checksum
+                    checksum_byte = chr(checksum).encode()
+                    message += checksum_byte
+                    message += b'\r'
 
-                lower_row = 'cez ' + lower_row
-            i += 1
+                    try:
+                        print(message)
+                        ser.write(message)
+                        if Controller.stop_threads:
+                            return
+                        time.sleep(sleep_between_show)
+                        if Controller.stop_threads:
+                            return
+                        response = ser.read()
+                        if response:
+                            print('Received:', response.decode())
+                        else:
+                            print('No response received.')
+
+                    except serial.SerialException as e:
+                        print(f"Error: {e}")
+
+
+                # second cycle
+
+                if Controller.stop_threads:
+                    return
+
+                ser = Controller.rs232_display_upper("Meskanie")
+
+                lower_row = '2 min.'
+
+                message = f'aA1 \x0A\x1Bx\x1Bd\x10\x1Bh\x19\x1Bt\x11{unidecode(lower_row)}\x0D'
+                print("from str:", lower_row)
+                message = message.encode()
+                checksum = 0
+                for byte in message:
+                    checksum ^= byte
+                checksum = 0x7F & ~checksum
+                checksum_byte = chr(checksum).encode()
+                message += checksum_byte
+                message += b'\r'
+
+                try:
+                    print(message)
+                    ser.write(message)
+                    if Controller.stop_threads:
+                        return
+                    time.sleep(sleep_between_show)
+                    if Controller.stop_threads:
+                        return
+                    response = ser.read()
+                    if response:
+                        print('Received:', response.decode())
+                    else:
+                        print('No response received.')
+
+                except serial.SerialException as e:
+                    print(f"Error: {e}")
+
+
+                # time.sleep(1)
+
+
+                # third cycle
+
+                ser = Controller.rs232_display_upper(upper_row)
+                i = 0
+
+                lower_row = 'Os 3013'
+
+                if Controller.stop_threads:
+                    return
+
+                message = f'aA1 \x0A\x1Bx\x1Bd\x10\x1Bh\x19\x1Bt\x11{unidecode(lower_row)}\x0D'
+
+                print("from cycle:", lower_row)
+
+                message = message.encode()
+                checksum = 0
+                for byte in message:
+                    checksum ^= byte
+                checksum = 0x7F & ~checksum
+                checksum_byte = chr(checksum).encode()
+                message += checksum_byte
+                message += b'\r'
+
+                try:
+                    print(message)
+                    ser.write(message)
+                    if Controller.stop_threads:
+                        return
+                    time.sleep(sleep_between_show)
+                    if Controller.stop_threads:
+                        return
+                    response = ser.read()
+                    if response:
+                        print('Received:', response.decode())
+                    else:
+                        print('No response received.')
+
+                except serial.SerialException as e:
+                    print(f"Error: {e}")
+
+
+                # time.sleep(1)
+
+                # fourth cycle
+
+                ser = Controller.rs232_display_upper("Odchod o")
+                i = 0
+
+                lower_row = '1 min.'
+
+                if Controller.stop_threads:
+                    return
+
+                message = f'aA1 \x0A\x1Bx\x1Bd\x10\x1Bh\x19\x1Bt\x11{unidecode(lower_row)}\x0D'
+
+                print("from cycle:", lower_row)
+
+                message = message.encode()
+                checksum = 0
+                for byte in message:
+                    checksum ^= byte
+                checksum = 0x7F & ~checksum
+                checksum_byte = chr(checksum).encode()
+                message += checksum_byte
+                message += b'\r'
+
+                try:
+                    print(message)
+                    ser.write(message)
+                    if Controller.stop_threads:
+                        return
+                    time.sleep(sleep_between_show)
+                    if Controller.stop_threads:
+                        return
+                    response = ser.read()
+                    if response:
+                        print('Received:', response.decode())
+                    else:
+                        print('No response received.')
+
+                except serial.SerialException as e:
+                    print(f"Error: {e}")
+
+        if state == 'after_station' or state == 'before_station':
+            # smer
+            # os x
+
+            ser = Controller.rs232_display_upper(upper_row)
+
+            lower_row = 'Os 3013'
 
             message = f'aA1 \x0A\x1Bx\x1Bd\x10\x1Bh\x19\x1Bt\x11{unidecode(lower_row)}\x0D'
-
-            # time.sleep(1)
 
             print("from cycle:", lower_row)
 
@@ -350,29 +498,56 @@ class Controller:
             message += b'\r'
 
             try:
-
                 print(message)
                 ser.write(message)
-
                 time.sleep(2)
-
                 response = ser.read()
                 if response:
                     print('Received:', response.decode())
                 else:
                     print('No response received.')
 
-
-
             except serial.SerialException as e:
                 print(f"Error: {e}")
-
+            return
 
 
 
     @staticmethod
+    def rs232_display_upper(upper_row):
+        message_upper = f"aA1 {unidecode(upper_row)}"
+        message_upper += '\x0D'
+        if Controller.ser is None:
+            ser = serial.Serial(port='COM3', baudrate=1200, bytesize=serial.SEVENBITS, parity=serial.PARITY_EVEN,
+                                stopbits=serial.STOPBITS_TWO, timeout=3)
+            Controller.ser = ser
+        else:
+            ser = Controller.ser
+        message = message_upper.encode()
+        checksum = 0
+        for byte in message:
+            checksum ^= byte
+        checksum = 0x7F & ~checksum
+        checksum_byte = chr(checksum).encode()
+        message += checksum_byte
+        message += b'\r'
+        try:
+            print(message)
+            ser.write(message)
+            time.sleep(1)
+            response = ser.read()
+            if response:
+                print('Received:', response.decode())
+            else:
+                print('No response received.')
+
+        except serial.SerialException as e:
+            print(f"Error: {e}")
+        return ser
+
+    @staticmethod
     def display_two_row_data(data):
-        threads = []
+        # threads = []
 
         controller_instance = Controller()
 
@@ -381,16 +556,16 @@ class Controller:
         if Controller.use_display_1:
             ethernet_thread = threading.Thread(target=Controller.display_two_row_on_eth_led_panel, args=(controller_instance, data,))
             ethernet_thread.start()
-            threads.append(ethernet_thread)
+            Controller.threads.append(ethernet_thread)
 
 
         if Controller.use_display_2:
             rs232_thread = threading.Thread(target=Controller.display_two_row_on_rs232_ibis_panel, args=(controller_instance, data,))
             rs232_thread.start()
-            threads.append(rs232_thread)
+            Controller.threads.append(rs232_thread)
 
-        for thread in threads:
-            thread.join(timeout=1)
+        # for thread in Controller.threads:
+        #     thread.join(timeout=1)
         #
         # if Controller.use_display_1 and Controller.use_display_2:
         #     print("ethernet and RS232")
@@ -428,12 +603,15 @@ class Controller:
 
         return
 
-    @staticmethod
-    def display_one_row_on_rs232_led_panel(upper_row):
+    # @staticmethod
+    def display_one_row_on_rs232_led_panel(self, upper_row, reset_message):
+
+        if not reset_message:
+            upper_row = upper_row['message']
 
         print("one row", upper_row)
 
-        message = str(upper_row)
+        message = f"aA1 {unidecode(upper_row)}"
 
         message += '\x0D'
 
@@ -485,12 +663,13 @@ class Controller:
 
 
     @staticmethod
-    def display_one_row_data(message):
+    def display_one_row_data(message, reset_message = False):
         threads = []
 
         controller_instance = Controller()
 
         print(Controller.use_display_1, Controller.use_display_2)
+
         if Controller.use_display_1:
             ethernet_thread = threading.Thread(target=Controller.display_one_row_on_eth_led_panel,
                                                args=(controller_instance, message,))
@@ -499,7 +678,7 @@ class Controller:
 
         if Controller.use_display_2:
             rs232_thread = threading.Thread(target=Controller.display_one_row_on_rs232_led_panel,
-                                        args=(message,))
+                                        args=(controller_instance, message, reset_message))
             rs232_thread.start()
             threads.append(rs232_thread)
 

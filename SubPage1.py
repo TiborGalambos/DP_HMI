@@ -287,6 +287,9 @@ class SubPage1(ctk.CTkFrame):
         self.finish_button.configure(text="Začať jazdu")
         GLOBAL_VARS.selected_trip_name = ''
 
+        com_man = CommunicationManager.get_instance()
+        com_man.reset_message()
+
 
     def switch1_callback(self):
         print("Checkbox checkbox1 state changed:", self.switch_setting_1.get())
