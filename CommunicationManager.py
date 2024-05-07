@@ -69,3 +69,49 @@ class CommunicationManager:
         response = requests.post(url)
         print(response.json())
 
+
+    def controller_connectivity_test(self):
+        url = 'http://127.0.0.1:5555/controller_connectivity_test'
+        try:
+            response = requests.get(url)
+            print(response.status_code)
+            if response.status_code == 200:
+                return True
+
+        except:
+            return False
+
+
+    def controller_internet_connectivity_test(self):
+        url = 'http://127.0.0.1:5555/controller_internet_connectivity_test'
+        try:
+            response = requests.get(url)
+            print(response.status_code)
+            if response.status_code == 200:
+                return True
+        except:
+            return False
+
+
+
+    def display_panel_1_test(self):
+        url = 'http://127.0.0.1:5555/controller_display_panel_1_test'
+        try:
+            response = requests.get(url)
+            print(response.status_code)
+            if response.status_code == 200:
+                return True
+        except:
+            return False
+
+    def display_panel_2_test(self):
+        url = 'http://127.0.0.1:5555/controller_display_panel_2_test'
+        try:
+            response = requests.get(url)
+            print(response.status_code)
+            if response.status_code == 200:
+                return True
+        except:
+            return False
+
+

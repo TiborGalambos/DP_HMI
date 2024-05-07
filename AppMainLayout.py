@@ -96,7 +96,7 @@ class AppMainLayout(ctk.CTk, PageController):
 
         self.page_controller.setup(self.pages, controller=self)
         self.page_controller.set_header_label(self.header_label)
-        self.page_controller.show_page("SubPage1")
+        self.page_controller.show_page("SubPage5")
 
     def pages_container(self):
         # Container for all pages

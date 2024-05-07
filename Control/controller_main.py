@@ -10,10 +10,6 @@ from flask import Flask, request, jsonify
 import socket
 app = Flask(__name__)
 
-
-
-
-
 class Controller:
 
     # display_one_row_on_eth_led_panel = None
@@ -28,6 +24,107 @@ class Controller:
     threads = []
 
     show_delays = False
+
+    @staticmethod
+    @app.route('/controller_connectivity_test', methods=['GET'])
+    def self_test():
+        return jsonify({"status": "success",}), 200
+
+    @staticmethod
+    @app.route('/controller_internet_connectivity_test', methods=['GET'])
+    def test_internet():
+        try:
+            socket.setdefaulttimeout(5)
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(('8.8.8.8', 53))
+            return jsonify({"internet_status": "success", }), 200
+        except socket.error as e:
+            print(e)
+            return jsonify({"internet_status": "fail", }), 503
+
+    @staticmethod
+    @app.route('/controller_display_panel_1_test', methods=['GET'])
+    def test_ethernet_panel():
+        try:
+            if Controller.test_ethernet_panel_connectivity():
+                return jsonify({"ethernet_display_panel_connectivity": "success", }), 200
+            else:
+                return jsonify({"ethernet_display_panel_connectivity": "fail", }), 503
+        except:
+            return jsonify({"ethernet_display_panel_connectivity": "fail", }), 503
+
+    @classmethod
+    def test_ethernet_panel_connectivity(cls):
+
+        xml_command = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" \
+                      "<Message Type=\"Aesys-PID\">\r\n" \
+                      "<Command Type=\"CheckIfAlive\" IdCmd=\"1235\">\r\n" \
+                      "</Message>"
+
+        print("xml command:", xml_command)
+
+        panel_ip = "172.16.4.121"
+        panel_port = 80
+
+        try:
+            result = Controller.send_udp_command(panel_ip, panel_port, xml_command, timeout=1)
+            print("returning true")
+            if result is not None:
+                return True
+            else:
+                return False
+        except:
+            return False
+
+    @staticmethod
+    @app.route('/controller_display_panel_2_test', methods=['GET'])
+    def test_ibis_panel():
+        try:
+            if Controller.test_ibis_panel_connectivity():
+                return jsonify({"ibis_display_panel_connectivity": "success", }), 200
+            else:
+                return jsonify({"ibis_display_panel_connectivity": "fail", }), 503
+        except:
+            return jsonify({"ibis_display_panel_connectivity": "fail", }), 503
+
+    @classmethod
+    def test_ibis_panel_connectivity(cls):
+
+        diagnostic_message = "a 2"
+        diagnostic_message += '\x0D'
+        print(diagnostic_message)
+        if Controller.ser is None:
+            ser = serial.Serial(port='COM3', baudrate=1200, bytesize=serial.SEVENBITS, parity=serial.PARITY_EVEN,
+                                stopbits=serial.STOPBITS_TWO, timeout=3)
+            Controller.ser = ser
+        else:
+            ser = Controller.ser
+        message = diagnostic_message.encode()
+        checksum = 0
+        for byte in message:
+            checksum ^= byte
+        checksum = 0x7F & ~checksum
+        checksum_byte = chr(checksum).encode()
+        message += checksum_byte
+        message += b'\r'
+        print(message)
+        try:
+            ser.write(message)
+            time.sleep(1)
+            response = ser.read()
+            if response:
+                print('Received:', response.decode())
+                return True
+            else:
+                print('No response received.')
+                return False
+
+        except serial.SerialException as e:
+            # print(f"Error: {e}")
+            return False
+
+
+
+
 
 
     @staticmethod
@@ -226,8 +323,10 @@ class Controller:
                 response, _ = sock.recvfrom(buffer_size)
                 print("Received response from the panel:")
                 print(response.decode())  # Assuming response is also in text format
+                return response.decode()
             except socket.timeout:
                 print("No response received within the timeout period.")
+                return None
 
 
     def display_two_row_on_eth_led_panel(self, data):
@@ -686,6 +785,8 @@ class Controller:
             thread.join(timeout=1)
 
         # print("ethernet and RS232")
+
+
 
 
 if __name__ == '__main__':
