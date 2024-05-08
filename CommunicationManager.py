@@ -2,6 +2,8 @@
 import socket
 import requests
 
+from DatabaseManager import DatabaseManager
+
 
 class CommunicationManager:
     _instance = None
@@ -36,16 +38,23 @@ class CommunicationManager:
             "display_2": self.use_display_2
         }
 
+        print("delay from send route update", delay)
+
         response = requests.post(url, json=payload)
         print(response.json())
 
 
     def send_settings(self, display_1, display_2, show_delay):
         url = 'http://127.0.0.1:5555/settings'
+        db_manager = DatabaseManager()
+        results = db_manager.get_settings()[0]
         payload = {
             "display_1": display_1,
             "display_2": display_2,
-            "show_delay": show_delay
+            "show_delay": show_delay,
+            "brightness": results[2],
+            "speed": results[3],
+            "com_port": results[1]
         }
         self.use_display_1 = display_1
         self.use_display_2 = display_2

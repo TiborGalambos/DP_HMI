@@ -88,7 +88,7 @@ class AppMainLayout(ctk.CTk, PageController):
 
     def navigation_bar_container(self):
         # Navigation bar
-        self.nav_bar = ctk.CTkFrame(self)
+        self.nav_bar = ctk.CTkFrame(self, fg_color="transparent")
         self.create_nav_bar()
         self.nav_bar.grid_rowconfigure(0, weight=0)
         self.nav_bar.grid_columnconfigure(index=0, weight=1)
@@ -96,7 +96,7 @@ class AppMainLayout(ctk.CTk, PageController):
 
         self.page_controller.setup(self.pages, controller=self)
         self.page_controller.set_header_label(self.header_label)
-        self.page_controller.show_page("SubPage5")
+        self.page_controller.show_page("MainPage")
 
     def pages_container(self):
         # Container for all pages
@@ -140,7 +140,7 @@ class AppMainLayout(ctk.CTk, PageController):
         self.header_label.grid(row=0, column=1, sticky='news')
 
         # Right frame for date and time labels
-        self.datetime_frame = ctk.CTkFrame(self.header_frame)
+        self.datetime_frame = ctk.CTkFrame(self.header_frame, fg_color="transparent")
         self.datetime_frame.grid(row=0, column=2, sticky='e')
 
         # Time label with larger font
@@ -157,12 +157,10 @@ class AppMainLayout(ctk.CTk, PageController):
 
 
     def update_datetime(self):
-        '''Update the date and time display'''
         current_time = time.strftime('%H:%M:%S')
         current_date = time.strftime('%d.%m.%Y')
         self.time_label.configure(text=current_time)
         self.date_label.configure(text=current_date)
-        # Schedule the `update_datetime` method to be called after 1000ms
         self.after(1000, self.update_datetime)
 
     def create_nav_bar(self):

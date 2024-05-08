@@ -12,18 +12,21 @@ app = Flask(__name__)
 
 class Controller:
 
-    # display_one_row_on_eth_led_panel = None
-    use_display_1 = False
+    use_display_1 = True
     use_display_2 = True
+    show_delays = True
+    display_speed = 4
+    com_port = 3
+    brightness = 0
+
     train_state = ''
 
+
     ser = None
-    # stop_threads_checked = False
 
     stop_threads = False
     threads = []
 
-    show_delays = False
 
     @staticmethod
     @app.route('/controller_connectivity_test', methods=['GET'])
@@ -150,12 +153,16 @@ class Controller:
     @app.route('/settings', methods=['POST'])
     def update_settings():
         settings = request.json
-        print(settings)
+        # print(settings)
         # controller_instance = Controller()
         Controller.use_display_1 = bool(settings.get("display_1"))
         Controller.use_display_2 = bool(settings.get("display_2"))
+        Controller.display_speed = settings.get("speed")
+        Controller.brightness = settings.get("brightness")
+        Controller.com_port = settings.get("com_port")
+        Controller.show_delays = settings.get("show_delay")
 
-        print(Controller.use_display_1, Controller.use_display_2)
+        print(Controller.use_display_1, Controller.use_display_2, Controller.display_speed, Controller.brightness, Controller.com_port)
         Controller.is_set = True
         return jsonify({"status": "success", "message": "Settings updated"}), 200
 
@@ -183,18 +190,23 @@ class Controller:
         date_str = current_date.strftime("%d.%m.%Y")
         # Controller.display_one_row_data(date_str, reset_message = True)
 
-        Controller.reset_rs232(date_str)
+        try:
 
-        Controller.stop_threads = True
-        for thread in Controller.threads:
-            thread.join(timeout=1)
+            Controller.reset_rs232(date_str)
 
-        Controller.stop_threads = False
-        Controller.threads = []
+            Controller.stop_threads = True
 
-        # time.sleep(1)
+            for thread in Controller.threads:
+                thread.join(timeout=1)
 
-        return jsonify({"status": "success", "message": "Reset message received"}), 200
+            Controller.stop_threads = False
+            Controller.threads = []
+
+            # time.sleep(1)
+
+            return jsonify({"status": "success", "message": "Reset message received"}), 200
+        except:
+            return jsonify({"status": "fail", "message": "Reset message not received"}), 503
 
 
     # @staticmethod
@@ -264,8 +276,11 @@ class Controller:
             return ''.join([f"\\{byte:02x}" for byte in char.encode('utf-8')])
 
     @staticmethod
-    def build_two_row_xml_command(message_row1, message_row2, lang="sk", font="A", scroll_speed="4", priority="1",
-                                  timeout="30", bright="0", update_visualization_mode="Immediate"):
+    def build_two_row_xml_command(message_row1, message_row2, lang="sk", font="A", priority="1",
+                                  timeout="30", update_visualization_mode="Immediate"):
+
+        scroll_speed = Controller.display_speed
+        bright = Controller.brightness
 
         # controller_instance = Controller()
         # converted_message_row1 = ''.join([Controller.encode_char(char, 0) for char in message_row1])
@@ -340,7 +355,7 @@ class Controller:
 
         message_row1 = destination_station
         message_row2 = "cez " + ', '.join(remaining_stations)
-        xml_command = Controller.build_two_row_xml_command(message_row1, message_row2, lang="sk", font="B", scroll_speed="5")
+        xml_command = Controller.build_two_row_xml_command(message_row1, message_row2, lang="sk", font="B")
         print("xml command:", xml_command)
 
         panel_ip = "172.16.4.121"
@@ -363,7 +378,10 @@ class Controller:
         train_delay = data.get('delay')
 
         message_row1 = destination_station
-        Controller.format_message_for_two_row_rs232(message_row1, remaining_stations, Controller.train_state)
+        try:
+            Controller.format_message_for_two_row_rs232(message_row1, remaining_stations, Controller.train_state)
+        except:
+            print("Maybe demo mode")
 
         return
 
@@ -616,33 +634,36 @@ class Controller:
     def rs232_display_upper(upper_row):
         message_upper = f"aA1 {unidecode(upper_row)}"
         message_upper += '\x0D'
-        if Controller.ser is None:
-            ser = serial.Serial(port='COM3', baudrate=1200, bytesize=serial.SEVENBITS, parity=serial.PARITY_EVEN,
-                                stopbits=serial.STOPBITS_TWO, timeout=3)
-            Controller.ser = ser
-        else:
-            ser = Controller.ser
-        message = message_upper.encode()
-        checksum = 0
-        for byte in message:
-            checksum ^= byte
-        checksum = 0x7F & ~checksum
-        checksum_byte = chr(checksum).encode()
-        message += checksum_byte
-        message += b'\r'
         try:
-            print(message)
-            ser.write(message)
-            time.sleep(1)
-            response = ser.read()
-            if response:
-                print('Received:', response.decode())
+            if Controller.ser is None:
+                ser = serial.Serial(port='COM3', baudrate=1200, bytesize=serial.SEVENBITS, parity=serial.PARITY_EVEN,
+                                    stopbits=serial.STOPBITS_TWO, timeout=3)
+                Controller.ser = ser
             else:
-                print('No response received.')
+                ser = Controller.ser
+            message = message_upper.encode()
+            checksum = 0
+            for byte in message:
+                checksum ^= byte
+            checksum = 0x7F & ~checksum
+            checksum_byte = chr(checksum).encode()
+            message += checksum_byte
+            message += b'\r'
+            try:
+                print(message)
+                ser.write(message)
+                time.sleep(1)
+                response = ser.read()
+                if response:
+                    print('Received:', response.decode())
+                else:
+                    print('No response received.')
 
-        except serial.SerialException as e:
-            print(f"Error: {e}")
-        return ser
+            except serial.SerialException as e:
+                print(f"Error: {e}")
+            return ser
+        except:
+            print("Maybe demo mode")
 
     @staticmethod
     def display_two_row_data(data):
@@ -651,29 +672,21 @@ class Controller:
         controller_instance = Controller()
 
         print(Controller.use_display_1, Controller.use_display_2)
+        try:
 
-        if Controller.use_display_1:
-            ethernet_thread = threading.Thread(target=Controller.display_two_row_on_eth_led_panel, args=(controller_instance, data,))
-            ethernet_thread.start()
-            Controller.threads.append(ethernet_thread)
+            if Controller.use_display_1:
+                ethernet_thread = threading.Thread(target=Controller.display_two_row_on_eth_led_panel, args=(controller_instance, data,))
+                ethernet_thread.start()
+                Controller.threads.append(ethernet_thread)
 
 
-        if Controller.use_display_2:
-            rs232_thread = threading.Thread(target=Controller.display_two_row_on_rs232_ibis_panel, args=(controller_instance, data,))
-            rs232_thread.start()
-            Controller.threads.append(rs232_thread)
+            if Controller.use_display_2:
+                rs232_thread = threading.Thread(target=Controller.display_two_row_on_rs232_ibis_panel, args=(controller_instance, data,))
+                rs232_thread.start()
+                Controller.threads.append(rs232_thread)
 
-        # for thread in Controller.threads:
-        #     thread.join(timeout=1)
-        #
-        # if Controller.use_display_1 and Controller.use_display_2:
-        #     print("ethernet and RS232")
-        # elif Controller.use_display_1:
-        #     print("only ethernet")
-        # elif Controller.use_display_2:
-        #     print("rS232")
-        # else:
-        #     print("no communication")
+        except:
+            print("Communication problems")
 
 
 
@@ -716,29 +729,34 @@ class Controller:
 
         print('RS232 message:', message)
 
-        if Controller.ser is None:
-            ser = serial.Serial(port='COM3', baudrate=1200, bytesize=serial.SEVENBITS, parity=serial.PARITY_EVEN,
-                                stopbits=serial.STOPBITS_TWO, timeout=3)
-            Controller.ser = ser
-        else:
-            ser = Controller.ser
+        try:
 
-        # Calculate checksum (simple exclusive OR of bytes)
-        message = message.encode()
+            if Controller.ser is None:
+                ser = serial.Serial(port='COM3', baudrate=1200, bytesize=serial.SEVENBITS, parity=serial.PARITY_EVEN,
+                                    stopbits=serial.STOPBITS_TWO, timeout=3)
+                Controller.ser = ser
+            else:
+                ser = Controller.ser
 
-        checksum = 0
-        for byte in message:
-            checksum ^= byte
+            # Calculate checksum (simple exclusive OR of bytes)
+            message = message.encode()
 
-        # Apply mask and NOT operation to the checksum
-        checksum = 0x7F & ~checksum
+            checksum = 0
+            for byte in message:
+                checksum ^= byte
 
-        # Convert checksum to a character and then encode it to bytes
-        checksum_byte = chr(checksum).encode()
+            # Apply mask and NOT operation to the checksum
+            checksum = 0x7F & ~checksum
 
-        message += checksum_byte
+            # Convert checksum to a character and then encode it to bytes
+            checksum_byte = chr(checksum).encode()
 
-        message += b'\r'  # Carriage return as a byte
+            message += checksum_byte
+
+            message += b'\r'  # Carriage return as a byte
+
+        except:
+            print("Maybe demo mode")
 
         try:
 
@@ -753,12 +771,15 @@ class Controller:
             else:
                 print('No response received.')
 
-        except serial.SerialException as e:
-            print(f"Error: {e}")
+        except:
+            print(f"Error or demo mode")
 
         finally:
-            if ser.is_open:
-                print("closing")
+            try:
+                if ser.is_open:
+                    print("closing")
+            except:
+                print("Maybe demo mode")
 
 
     @staticmethod

@@ -10,7 +10,7 @@ class SubPage3(ctk.CTkFrame):
         super().__init__(master)
         self.controller = controller
         self.grid_columnconfigure(0, weight=1)
-        self.settings_container = ctk.CTkFrame(self)
+        self.settings_container = ctk.CTkFrame(self, fg_color="transparent")
         self.settings_container.grid(row=0, column=0, sticky="news", padx=20, pady=20)
         self.settings_container.grid_columnconfigure(0, weight=1)
         self.settings_container.grid_columnconfigure(1, weight=1)
@@ -53,7 +53,7 @@ class SubPage3(ctk.CTkFrame):
 
         # Add a reset button below the 3x3 grid
         self.reset_btn = ctk.CTkButton(self.settings_container, text="Ukončiť mimoriadnu správu", command=self.reset_selection, font=("Arial", 20), fg_color="green")
-        self.reset_btn.grid(row=5, column=0, columnspan=3, pady=(150,60), sticky="nsew", padx=(1400,60), ipady=30)
+        self.reset_btn.grid(row=5, column=0, columnspan=3, pady=(120,60), sticky="nsew", padx=(1400,60), ipady=30)
 
         self.configure_button_text(0, "Nenastupovať")
         self.configure_button_text(1, "Mimo prevádzky")

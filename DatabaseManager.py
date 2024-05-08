@@ -195,5 +195,73 @@ class DatabaseManager:
 
         # Close the connection
         cursor.close()
-        conn.close()
+        # conn.close()
+
+    def get_settings(self):
+        try:
+            # Establishing the connection to the database
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            # SQL query to fetch all records from application_settings
+            query = "SELECT * FROM application_settings"
+
+            # Executing the query
+            cursor.execute(query)
+
+            # Fetching all rows from the database
+            records = cursor.fetchall()
+
+            # Printing the records
+            for record in records:
+                print("theme:", record[0], "panel2 port number:", record[1], "panel1 brightness:",
+                      record[2], "display speed:", record[3])
+
+            # Closing the cursor and connection
+            cursor.close()
+            # conn.close()
+            return records
+
+        except Exception as e:
+            print("An error occurred:", e)
+
+
+    def update_setting(self, theme, panel2_port_number, panel1_brightness, display_speed):
+
+
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            # SQL query to update a record
+            query = """
+            UPDATE application_settings
+            SET theme = %s, panel2_port_number = %s, panel1_brightness = %s, display_speed = %s
+            WHERE id = 1;
+            """
+
+            # Data tuple for the query
+            data = (theme, panel2_port_number, panel1_brightness, display_speed)
+            print("printing data from db manager")
+            print(data)
+
+            # Executing the query
+            cursor.execute(query, data)
+
+            # Committing the changes
+            conn.commit()
+
+            # Check if update was successful
+            if cursor.rowcount == 0:
+                print("No record updated, please check the ID.")
+            else:
+                print("Record updated successfully.")
+
+            # Closing the cursor and connection
+            cursor.close()
+
+        except Exception as e:
+            print("An error occurred:", e)
+
+
 

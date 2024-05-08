@@ -41,7 +41,7 @@ class SubPage1(ctk.CTkFrame):
         self.routes_list_container.grid_rowconfigure(1, weight=1)
 
         self.trips_list_container = ctk.CTkFrame(self)
-        self.trips_list_container.grid(row=0, column=1, sticky="nwes", padx=(20, 10), pady=20)
+        self.trips_list_container.grid(row=0, column=1, sticky="nwes", padx=(10, 10), pady=20)
         self.trips_list_container.grid_columnconfigure(0, weight=1)
         self.trips_list_container.grid_rowconfigure(1, weight=1)
 
@@ -50,7 +50,7 @@ class SubPage1(ctk.CTkFrame):
         self.details_container = ctk.CTkFrame(self)
         self.details_container.configure(width=350)
 
-        self.details_container.grid(row=0, column=2, sticky="news", padx=0, pady=20)
+        self.details_container.grid(row=0, column=2, sticky="news", padx=(10, 10), pady=20)
 
         self.details_container.grid_columnconfigure(0, weight=1)
         self.details_container.grid_columnconfigure(1, weight=1)
@@ -61,7 +61,7 @@ class SubPage1(ctk.CTkFrame):
         self.details_container.grid_propagate(False)
 
         self.settings_container = ctk.CTkFrame(self)
-        self.settings_container.grid(row=0, column=3, sticky="news", padx=20, pady=20)
+        self.settings_container.grid(row=0, column=3, sticky="news", padx=(10, 20), pady=20)
         self.settings_container.grid_columnconfigure(0, weight=1)
         self.settings_container.grid_columnconfigure(1, weight=1)
 
@@ -178,12 +178,12 @@ class SubPage1(ctk.CTkFrame):
         self.down_button_route.grid(row=2, column=0, sticky="news", padx=20, pady=(10, 0), ipady=20, ipadx=120)
 
         # Container for routes
-        self.trips_frame = ctk.CTkFrame(self.trips_list_container)
+        self.trips_frame = ctk.CTkFrame(self.trips_list_container, fg_color="transparent")
         self.trips_frame.grid(row=1, column=0, sticky="nsew", padx=20)
         self.trips_frame.grid_columnconfigure(0, weight=1)
 
         # Container for trips
-        self.routes_frame = ctk.CTkFrame(self.routes_list_container)
+        self.routes_frame = ctk.CTkFrame(self.routes_list_container, fg_color="transparent")
         self.routes_frame.grid(row=1, column=0, sticky="nsew", padx=20)
         self.routes_frame.grid_columnconfigure(0, weight=1)
 
@@ -220,52 +220,55 @@ class SubPage1(ctk.CTkFrame):
 
     def start_the_trip(self):
 
-        self.panel1 = False
-        self.panel2 = False
-        self.show_delay = False
+        if self.finish_button.cget("text") != "Prebieha jazda":
 
-        if self.is_trip_selected:
-
-            if self.switch_setting_1.get() == 1:
-                self.panel1 = True
-
-            if self.switch_setting_2.get() == 1:
-                self.panel2 = True
-
-            self.controller.set_route_label(self.selected_trip_name)
-        else:
-            print("Cannot start, trip not selected!")
-
-
-        print(self.switch_setting_3.get(), self.switch_setting_4.get())
-
-        if self.switch_setting_3.get() and not self.switch_setting_4.get():
-            print("Delay_display: ON")
-            self.show_delay = True
-
-        elif not self.switch_setting_3.get() and self.switch_setting_4.get():
-            print("Delay_display: OFF")
+            self.panel1 = False
+            self.panel2 = False
             self.show_delay = False
 
+            if self.is_trip_selected:
 
-        else:
-            print("Something went wrong")
-            pass
+                if self.switch_setting_1.get() == 1:
+                    self.panel1 = True
+
+                if self.switch_setting_2.get() == 1:
+                    self.panel2 = True
 
 
-        # self.set_settings_button_state()
-        self.finish_button.configure(state=ctk.DISABLED, fg_color="#A9C8A9")  # Darker color when disabled
-        self.finish_button.configure(text="Prebieha jazda")
-        GLOBAL_VARS.selected_trip_name = self.selected_trip_name
+                self.controller.set_route_label(self.selected_trip_name)
+            else:
+                print("Cannot start, trip not selected!")
 
-        communication = CommunicationManager.get_instance()
-        communication.send_settings(display_1=self.panel1,
-                                    display_2=self.panel2,
-                                    show_delay=self.show_delay)
 
-        # print("sleep?")
+            print(self.switch_setting_3.get(), self.switch_setting_4.get())
 
-        self.switch_window()
+            if self.switch_setting_3.get() and not self.switch_setting_4.get():
+                print("Delay_display: ON")
+                self.show_delay = True
+
+            elif not self.switch_setting_3.get() and self.switch_setting_4.get():
+                print("Delay_display: OFF")
+                self.show_delay = False
+
+
+            else:
+                print("Something went wrong")
+                pass
+
+
+            # self.set_settings_button_state()
+            self.finish_button.configure(state=ctk.DISABLED, fg_color="#A9C8A9")  # Darker color when disabled
+            self.finish_button.configure(text="Prebieha jazda")
+            GLOBAL_VARS.selected_trip_name = self.selected_trip_name
+
+            communication = CommunicationManager.get_instance()
+            communication.send_settings(display_1=self.panel1,
+                                        display_2=self.panel2,
+                                        show_delay=self.show_delay)
+
+            # print("sleep?")
+
+            self.switch_window()
 
 
 
@@ -283,7 +286,10 @@ class SubPage1(ctk.CTkFrame):
 
         self.set_settings_button_state()
         GLOBAL_VARS.active_trip_id = 0
-        self.controller.unset_subpage2_map_markers()
+        try:
+            self.controller.unset_subpage2_map_markers()
+        except:
+            pass
         self.finish_button.configure(text="Začať jazdu")
         GLOBAL_VARS.selected_trip_name = ''
 
@@ -395,18 +401,20 @@ class SubPage1(ctk.CTkFrame):
             row += 1
 
         # Update the selected trip ID and any other necessary UI components
-        self.selected_trip_id = trip[0]
-        GLOBAL_VARS.active_trip_id = trip[0]
-        self.update_displayed_trips()
 
-        self.is_trip_selected = True
+        if self.finish_button.cget("text") != "Prebieha jazda":
+            self.selected_trip_id = trip[0]
+            GLOBAL_VARS.active_trip_id = trip[0]
+            self.update_displayed_trips()
 
-        self.selected_trip_name = trip[1]
+            self.is_trip_selected = True
 
-        self.settings_route_name.configure(text=self.selected_trip_name, font=("Arial", 30),
-                                                anchor='center', height=100)
+            self.selected_trip_name = trip[1]
 
-        self.set_settings_button_state()
+            self.settings_route_name.configure(text=self.selected_trip_name, font=("Arial", 30),
+                                                    anchor='center', height=100)
+
+            self.set_settings_button_state()
 
 
     def display_routes(self, route, index):

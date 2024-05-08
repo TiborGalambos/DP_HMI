@@ -1,3 +1,4 @@
+import datetime
 import os
 from concurrent.futures import ThreadPoolExecutor
 import requests
@@ -44,7 +45,7 @@ class SubPage2(ctk.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
         self.map_container = ctk.CTkFrame(self)
         self.map_container.grid(row=0, column=0, sticky="nwse", pady=20, padx=20)
-        self.trip_stops_container = ctk.CTkFrame(self)
+        self.trip_stops_container = ctk.CTkFrame(self, fg_color="transparent")
         self.trip_stops_container.grid(row=0, column=1, sticky="nswe", padx=20, pady=20)
 
         self.database_path = os.path.join("offline_map.db")
@@ -56,7 +57,6 @@ class SubPage2(ctk.CTkFrame):
         self.dbm = DatabaseManager()
 
         self.offline_map_db_path = os.path.join("offline_map.db")
-
 
         self.current_stop_seq = 0
 
@@ -112,6 +112,7 @@ class SubPage2(ctk.CTkFrame):
 
         self.current_stop_seq = 0
         self.stops_box_position = 1
+        self.delay_label.configure(text="")
 
 
     def set_stops_and_times(self):
@@ -134,15 +135,15 @@ class SubPage2(ctk.CTkFrame):
         self.up_button = ctk.CTkButton(self.trip_stops_container, text='', command=self.scroll_up, width=20, image=arrow_up_icon)
         self.down_button = ctk.CTkButton(self.trip_stops_container, text='', command=self.scroll_down, width=20, image=arrow_down_icon)
 
-        self.first_row_container = ctk.CTkFrame(self.trip_stops_container, border_width=5, border_color='darkgray', width =800)
-        self.second_row_container = ctk.CTkFrame(self.trip_stops_container, border_width=5, border_color='darkgray', width =800)
-        self.third_row_container = ctk.CTkFrame(self.trip_stops_container, border_width=5, border_color='darkgray', width =800)
-        self.fourth_row_container = ctk.CTkFrame(self.trip_stops_container, width=800)
+        self.first_row_container = ctk.CTkFrame(self.trip_stops_container, width =800)
+        self.second_row_container = ctk.CTkFrame(self.trip_stops_container, width =800)
+        self.third_row_container = ctk.CTkFrame(self.trip_stops_container, width =800)
+        self.fourth_row_container = ctk.CTkFrame(self.trip_stops_container, width=800, fg_color="transparent")
 
-        self.first_row_container.grid(row=0, column=0, sticky='nwse', ipadx=30, ipady=20)
-        self.second_row_container.grid(row=1, column=0, sticky='nwse', ipadx=30, ipady=20)
-        self.third_row_container.grid(row=2, column=0, sticky='nwse', ipadx=30, ipady=20)
-        self.fourth_row_container.grid(row=3, column= 0, sticky='nwse', ipadx=30, ipady=20)
+        self.first_row_container.grid(row=0, column=0, sticky='nwse', ipadx=30, ipady=20, pady=(0, 10))
+        self.second_row_container.grid(row=1, column=0, sticky='nwse', ipadx=30, ipady=20, pady=(0, 10))
+        self.third_row_container.grid(row=2, column=0, sticky='nwse', ipadx=30, ipady=20, pady=0)
+        self.fourth_row_container.grid(row=3, column= 0, sticky='s', ipadx=30)
 
 
         self.first_row_container.grid_columnconfigure(0, weight=1)
@@ -220,7 +221,7 @@ class SubPage2(ctk.CTkFrame):
         self.in_stop_label2.configure(text=f'{self.trip_stop_times[self.current_stop_seq + 1]}')
         self.in_stop_label3.configure(text=f'{self.trip_stop_times[self.current_stop_seq + 2]}')
 
-        self.delay_label = ctk.CTkLabel(self.fourth_row_container, text='Aktuálne meškanie vlaku: 0. min', font=('Arial', 20))
+        self.delay_label = ctk.CTkLabel(self.fourth_row_container, text='Aktuálne meškanie vlaku: 0 min.', font=('Arial', 20))
         self.delay_label.grid(row=0, column=0, sticky='nw', padx=10, pady=(25,10))
 
         communication = CommunicationManager.get_instance()
@@ -421,18 +422,43 @@ class SubPage2(ctk.CTkFrame):
         if self.stops_box_position == 1:
             train_state = "before_station"
 
+        delay = 0
+
         if self.stops_box_position == 2:
+            scheduled = self.trip_stop_times[self.current_stop_seq]
+            actual = datetime.datetime.now().time()
+
+            delay = ((datetime.datetime.combine(datetime.date.today(), actual) -
+                      datetime.datetime.combine(datetime.date.today(), scheduled)).total_seconds() / 60)
+
+            print("delay ", delay)
+
+            print("actual, scheduled:  ", actual, scheduled)
+
+            if delay >= 0:
+
+                delay_int = int(max(0, delay))
+                self.delay_label.configure(text=f"Aktuálne meškanie vlaku: {delay_int} min.")
+
+            else:
+                self.delay_label.configure(text=f"Do odchodu ostáva: {int(abs(delay))} min.")
+
+
+
             train_state = "in_station"
 
         if self.stops_box_position == 3:
             train_state = "after_station"
+
+        print("--------", train_state)
 
 
 
         communication.send_route_update(routeID=GLOBAL_VARS.selected_trip_name,
                                         train_state=train_state,
                                         remaining_stations=self.trip_stops[self.current_stop_seq:],
-                                        destination_station=self.trip_stops[-1])
+                                        destination_station=self.trip_stops[-1],
+                                        delay=int(delay))
 
 
 

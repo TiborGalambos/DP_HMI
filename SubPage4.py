@@ -29,13 +29,13 @@ class SubPage4(ctk.CTkFrame):
         self.diagnostics_container.grid_rowconfigure(6, weight=0)
         self.diagnostics_container.grid_rowconfigure(7, weight=0)
 
-        self.server_test_button = ctk.CTkButton(self.diagnostics_container, text="Spustiť",
+        self.server_test_button = ctk.CTkButton(self.diagnostics_container, text="Spustiť", font=("Arial", 20),
                             command=self.server_test, fg_color="#144870")
 
-        self.panel1_test_button = ctk.CTkButton(self.diagnostics_container, text="Spustiť",
+        self.panel1_test_button = ctk.CTkButton(self.diagnostics_container, text="Spustiť", font=("Arial", 20),
                                            command=self.panel1_test, fg_color="#144870")
 
-        self.panel2_test_button = ctk.CTkButton(self.diagnostics_container, text="Spustiť",
+        self.panel2_test_button = ctk.CTkButton(self.diagnostics_container, text="Spustiť", font=("Arial", 20),
                                            command=self.panel2_test, fg_color="#144870")
 
 
@@ -45,14 +45,14 @@ class SubPage4(ctk.CTkFrame):
         self.server_diagnostic_header_label = ctk.CTkLabel(self.diagnostics_container,
                                                            text="Diagnostika ovládača",
                                                            font=("Arial", 30, "bold"), anchor='center')
-        self.server_diagnostic_header_label.grid(row=0, column=0, sticky="ew", pady=(40, 50), columnspan=1)
+        self.server_diagnostic_header_label.grid(row=0, column=0, sticky="w", pady=(40, 50), columnspan=1, padx=(70, 0))
 
         self.server_diagnostic_header_label = ctk.CTkLabel(self.diagnostics_container,
                                                            text="Test pripojenia ovládača a prístupu na internet",
                                                            font=("Arial", 18), anchor='w')
-        self.server_diagnostic_header_label.grid(row=1, column=0, sticky="ew", pady=(40, 50), padx=(30, 0), columnspan=1)
+        self.server_diagnostic_header_label.grid(row=1, column=0, sticky="w", pady=(40, 50), padx=(100, 0), columnspan=1)
 
-        self.server_test_button.grid(row=1, column=1, sticky="ew")
+        self.server_test_button.grid(row=1, column=1, sticky="e", rowspan=1, ipady=30, ipadx=200, padx=(0,60))
 
         self.separator = ttk.Separator(self.diagnostics_container)
         self.separator.grid(row=2, column=0, padx=100, pady=(0, 60), columnspan=2, sticky='news')
@@ -65,15 +65,15 @@ class SubPage4(ctk.CTkFrame):
         self.server_diagnostic_header_label = ctk.CTkLabel(self.diagnostics_container,
                                                            text="Diagnostika panela 1",
                                                            font=("Arial", 30), anchor='center')
-        self.server_diagnostic_header_label.grid(row=3, column=0, sticky="ew", pady=(40, 50), columnspan=1)
+        self.server_diagnostic_header_label.grid(row=3, column=0, sticky="w", pady=(30, 50), columnspan=1, padx=(70, 0))
 
         self.server_diagnostic_header_label = ctk.CTkLabel(self.diagnostics_container,
                                                            text="Test pripojenia panela 1 odoslaním správy.",
                                                            font=("Arial", 18), anchor='w')
-        self.server_diagnostic_header_label.grid(row=4, column=0, sticky="ew", pady=(40, 50), padx=(30, 0),
+        self.server_diagnostic_header_label.grid(row=4, column=0, sticky="w", pady=(40, 50), padx=(100, 0),
                                                  columnspan=1)
 
-        self.panel1_test_button.grid(row=4, column=1, sticky="ew")
+        self.panel1_test_button.grid(row=4, column=1, sticky="e", rowspan=1, ipady=30, ipadx=200, padx=(0,60))
 
         self.separator = ttk.Separator(self.diagnostics_container)
         self.separator.grid(row=5, column=0, padx=100, pady=(0, 60), columnspan=2, sticky='news')
@@ -84,15 +84,15 @@ class SubPage4(ctk.CTkFrame):
         self.server_diagnostic_header_label = ctk.CTkLabel(self.diagnostics_container,
                                                            text="Diagnostika panela 2",
                                                            font=("Arial", 30), anchor='center')
-        self.server_diagnostic_header_label.grid(row=6, column=0, sticky="ew", pady=(40, 50), columnspan=1)
+        self.server_diagnostic_header_label.grid(row=6, column=0, sticky="w", pady=(30, 50), columnspan=1, padx=(70, 0))
 
         self.server_diagnostic_header_label = ctk.CTkLabel(self.diagnostics_container,
                                                            text="Test pripojenia panela 2 odoslaním správy.",
                                                            font=("Arial", 18), anchor='w')
-        self.server_diagnostic_header_label.grid(row=7, column=0, sticky="ew", pady=(40, 50), padx=(30, 0),
+        self.server_diagnostic_header_label.grid(row=7, column=0, sticky="w", pady=(40, 50), padx=(100, 0),
                                                  columnspan=1)
 
-        self.panel2_test_button.grid(row=7, column=1, sticky="ew")
+        self.panel2_test_button.grid(row=7, column=1, sticky="e", rowspan=1, ipady=30, ipadx=200, padx=(0,60))
 
 
 
