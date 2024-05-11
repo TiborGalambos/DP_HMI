@@ -20,8 +20,6 @@ class Controller:
     brightness = 0
 
     train_state = ''
-
-
     ser = None
 
     stop_threads = False
@@ -208,21 +206,6 @@ class Controller:
         except:
             return jsonify({"status": "fail", "message": "Reset message not received"}), 503
 
-
-    # @staticmethod
-    # @app.route('/reset', methods=['POST'])
-    # def reset_route():
-    #     message = request.json
-    #     print(message)
-    #
-    #     if (message.get('reset')):
-    #         Controller.use_display_1 = False
-    #         Controlleruse_display_2 = False
-    #         Controllershow_delays = False
-    #         # TODO delete what is displayed on led panels
-    #
-    #     return jsonify({"status": "success", "message": "Basic message received"}), 200
-
     @staticmethod
     def reset_rs232(upper_row):
         ser = Controller.rs232_display_upper(upper_row)
@@ -265,15 +248,15 @@ class Controller:
 
 
 
-    @staticmethod
-    def encode_char(char, rs232):
-        if ord(char) < 128:
-            return char
-        else:
-            if rs232:
-                return ''.join([f"{byte:02x}" for byte in char.encode('utf-8')])
-            print("...")
-            return ''.join([f"\\{byte:02x}" for byte in char.encode('utf-8')])
+    # @staticmethod
+    # def encode_char(char, rs232):
+    #     if ord(char) < 128:
+    #         return char
+    #     else:
+    #         if rs232:
+    #             return ''.join([f"{byte:02x}" for byte in char.encode('utf-8')])
+    #         print("...")
+    #         return ''.join([f"\\{byte:02x}" for byte in char.encode('utf-8')])
 
     @staticmethod
     def build_two_row_xml_command(message_row1, message_row2, lang="sk", font="A", priority="1",
