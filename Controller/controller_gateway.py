@@ -1,23 +1,28 @@
 import socket
+from threading import Thread
 
 from flask import Flask, jsonify, request
 
-from Control.controller import Controller
+from Controller.controller import Controller
 
 app = Flask(__name__)
 controller = Controller()
 @app.route('/route_update', methods=['POST'])
 def route_update():
-
     data = request.json
     print(data)
+    # controller.display_route(data)
 
-    controller.display_route(data)
+    thread = Thread(target=controller.display_route, args=(data,))
+    thread.start()
     return jsonify({"status": "success", "message": "Route update received"}), 200
 
 @app.route('/reset_message', methods=['POST'])
 def reset_message():
-    controller.reset()
+    # controller.reset()
+
+    thread = Thread(target=controller.reset)
+    thread.start()
     return jsonify({"status": "success", "message": "Route update received"}), 200
 
 

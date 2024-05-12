@@ -5,7 +5,7 @@ def format_message(upper_row, lower_row):
     # Base command for panel with address 1; change as needed
     command = 'aA1 '
 
-    # Control sequence and command to set up the display attributes
+    # Controller sequence and command to set up the display attributes
     attributes = '#1Bx#E3#21#30'
 
     # Prepare upper and lower rows with required control characters for new line and continuity

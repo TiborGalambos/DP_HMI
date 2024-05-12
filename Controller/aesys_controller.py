@@ -25,7 +25,7 @@ class AesysController:
         return cls._instance
 
     @classmethod
-    def __thread_in_station(cls, train_number, destination_station, remaining_stations, train_delay, speed, brightness):
+    def __thread_in_station(cls, train_number, destination_station, remaining_stations, train_delay, speed="4", brightness="0"):
         while not cls.stop_thread.is_set():
 
             if cls.running.is_set():
@@ -70,11 +70,16 @@ class AesysController:
                     # print("xml command:", xml_command)
                     cls.send_udp_packet(cls.panel_ip, cls.panel_port, xml_command, timeout=1)
 
-
-                    time.sleep(10)
-
-                    if cls.stop_thread.is_set():
-                        return
+                    for i in range(10):
+                        time.sleep(1)
+                        if cls.stop_thread.is_set():
+                            return
+                    #
+                    #
+                    # time.sleep(10)
+                    #
+                    # if cls.stop_thread.is_set():
+                    #     return
 
                 except queue.Empty:
                     continue

@@ -2,9 +2,8 @@
 import GLOBAL_VARS
 import customtkinter as ctk
 
-from SubPage2 import SubPage2
 
-
+# Page control class controls the individual switches between pages
 class PageController:
     def __init__(self):
         
@@ -13,8 +12,7 @@ class PageController:
         self.page_display_names = None
         self.controller = None
         self.pages = None
-        
-    
+
     
     def setup(self, pages, controller):
         self.pages = pages
@@ -26,11 +24,10 @@ class PageController:
     def set_header_label(self, header_label):
         self.header_label = header_label
 
+    # Method to show a page for the given name and update header label text.
     def show_page(self, page_name, header_label = None):
-        '''Show a frame for the given page name and update header text'''
         page = self.pages[page_name]
         page.tkraise()
-        # Use the display name from the mapping
         display_name = self.page_display_names.get(page_name, page_name)
 
         for key, value in dict(self.page_display_names).items():

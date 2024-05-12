@@ -5,25 +5,29 @@ import socket
 import psycopg2
 import time
 
+# Database manager is used for querying the database.
+# This class has methods that ensure the needs of gui are met in terms of accessing data from the database.
 class DatabaseManager:
     def __init__(self):
         self.conn = None
 
+    # Connectivity test to database
     def connection_test(self):
         try:
-            # Attempt to establish a connection to the database
             self.conn = psycopg2.connect("dbname=postgres user=postgres password=postgres")
             cur = self.conn.cursor()
             cur.execute("SELECT 1")
 
-            print("Connection to the database was successful.")
+            print("Database connection successful")
         except OperationalError as e:
-            print(f"An error occurred: {e}")
+            print(f"Error: {e}")
             self.conn = None
         finally:
             if self.conn is None:
-                print("Failed to connect to the database.")
+                print("Database connection failed")
 
+
+    # Method returns connection to db.
     def get_connection(self):
         if self.conn is None:
             self.connection_test()
@@ -31,6 +35,8 @@ class DatabaseManager:
                 return self.conn
         return self.conn
 
+
+    # Method for initial route fetch
     def fetch_routes(self):
         try:
 
@@ -53,12 +59,12 @@ class DatabaseManager:
             cur.execute(query)
             trips = cur.fetchall()
             cur.close()
-            # conn.close()
             return trips
         except Exception as e:
-            print(f"An error occurred: {e}")
+            print(f"Error: {e}")
             return []
 
+    # Method that fetches trips by route id used to fill the table.
     def fetch_trip_by_route_id(self, route_id):
         try:
             conn = self.get_connection()
@@ -75,14 +81,15 @@ class DatabaseManager:
             """
 
             cur.execute(query, (route_id,))
-
             routes = cur.fetchall()
             cur.close()
             return routes
         except Exception as e:
-            print(f"An error occurred: {e}")
+            print(f"Error: {e}")
             return []
 
+
+    # Method for fetching stop times of selected trip.
     def fetch_trip_stop_times(self, trip_id):
         try:
             conn = self.get_connection()
@@ -105,15 +112,15 @@ class DatabaseManager:
                         """
 
             cur.execute(query, (trip_id,))
-
             routes = cur.fetchall()
             cur.close()
             return routes
         except Exception as e:
-            print(f"An error occurred: {e}")
+            print(f"Error: {e}")
             return []
 
 
+    # Method for fetching stop times with coords of selected trip.
     def fetch_trip_stop_times_with_coords(self, trip_id):
         try:
             conn = self.get_connection()
@@ -138,29 +145,27 @@ class DatabaseManager:
                         """
 
             cur.execute(query, (trip_id,))
-
             routes = cur.fetchall()
             cur.close()
             return routes
         except Exception as e:
-            print(f"An error occurred: {e}")
+            print(f"Error: {e}")
             return []
 
 
-
-    # Function to check internet connectivity
+    # Method to check internet connectivity.
     def check_internet(self, host="8.8.8.8", port=53, timeout=3):
         try:
             socket.setdefaulttimeout(timeout)
             socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
             return True
-        except socket.error as ex:
-            print(ex)
+        except socket.error as e:
+            print(e)
             return False
 
-    # Function to update the database with coordinates
+    # Method to update the coordinates in the database by open railway map api.
+    # Used occasionally by running 'coordinates_update.py'.
     def update_coordinates(self):
-        # Establish a database connection
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
@@ -168,100 +173,71 @@ class DatabaseManager:
             print(f"Database connection failed: {e}")
             return
 
-        # Select rows where latitude or longitude is NULL
         cursor.execute("SELECT stop_id, name FROM stops WHERE latitude IS NULL OR longitude IS NULL;")
         stops = cursor.fetchall()
 
         for stop_id, name in stops:
-            # Call the API
             response = requests.get(f"https://api.openrailwaymap.org/v2/facility?name={name}&limit=1")
 
-            # If the API call is successful and returns data
             if response.status_code == 200 and response.json():
                 data = response.json()[0]
                 latitude = data.get('latitude')
                 longitude = data.get('longitude')
 
-                # Update the database row
                 update_query = "UPDATE stops SET latitude = %s, longitude = %s WHERE stop_id = %s;"
                 cursor.execute(update_query, (latitude, longitude, stop_id))
                 conn.commit()
-                print(f"Coordinates updated for {name}")
+                print(f"Coords updated for {name}")
 
             else:
-                print(f"Failed to get data for {name}")
+                print(f"Failed coords updated for {name}")
 
-            time.sleep(1)
+            # Sleep needed, as the open api cannot be commercially used, so there is a not specified rate limit.
+            # You would maybe need to increase the sleep or run the py file multiple times to ensure you updated
+            # every coordinate.
+            time.sleep(3)
 
-        # Close the connection
         cursor.close()
-        # conn.close()
 
     def get_settings(self):
         try:
-            # Establishing the connection to the database
             conn = self.get_connection()
             cursor = conn.cursor()
-
-            # SQL query to fetch all records from application_settings
             query = "SELECT * FROM application_settings"
-
-            # Executing the query
             cursor.execute(query)
-
-            # Fetching all rows from the database
             records = cursor.fetchall()
-
-            # Printing the records
             for record in records:
                 print("theme:", record[0], "panel2 port number:", record[1], "panel1 brightness:",
                       record[2], "display speed:", record[3])
-
-            # Closing the cursor and connection
             cursor.close()
-            # conn.close()
             return records
 
         except Exception as e:
-            print("An error occurred:", e)
+            print("Error:", e)
 
 
+    # Updating the settings will also update the database.
     def update_setting(self, theme, panel2_port_number, panel1_brightness, display_speed):
-
 
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
-
-            # SQL query to update a record
             query = """
             UPDATE application_settings
             SET theme = %s, panel2_port_number = %s, panel1_brightness = %s, display_speed = %s
             WHERE id = 1;
             """
-
-            # Data tuple for the query
             data = (theme, panel2_port_number, panel1_brightness, display_speed)
             print("printing data from db manager")
             print(data)
-
-            # Executing the query
             cursor.execute(query, data)
-
-            # Committing the changes
             conn.commit()
 
-            # Check if update was successful
             if cursor.rowcount == 0:
-                print("No record updated, please check the ID.")
+                print("Fail")
             else:
-                print("Record updated successfully.")
-
-            # Closing the cursor and connection
+                print("Update was successful")
             cursor.close()
 
         except Exception as e:
-            print("An error occurred:", e)
-
-
-
+            print("Error:", e)

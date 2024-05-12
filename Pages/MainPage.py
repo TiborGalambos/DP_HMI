@@ -1,8 +1,7 @@
 import customtkinter as ctk
 
-from PageController import PageController
 
-
+# Main page of the GUI, contains several buttons that together act as the main menu.
 class MainPage(ctk.CTkFrame):
 
     def __init__(self, master, controller):
@@ -10,7 +9,6 @@ class MainPage(ctk.CTkFrame):
         self.controller = controller
 
         self.buttons_info = self.controller.page_display_names.copy()
-        # self.buttons_info.pop('MainPage', None)
 
         for key, value in dict(self.buttons_info).items():
             if value == 'MainPage':
@@ -25,7 +23,6 @@ class MainPage(ctk.CTkFrame):
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
-        # self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(2, weight=1)
 
         col_num = 0
@@ -41,11 +38,10 @@ class MainPage(ctk.CTkFrame):
 
             button.grid(row=row_num, column=col_num, sticky='nsew', padx = 50, pady = 50)
 
-            # Configure the column to have a minsize equal to the button size, ensuring a square shape
             self.grid_columnconfigure(col_num)
 
             icon_num += 1
-            col_num += 1  # Increment counter for each button
+            col_num += 1
 
             if col_num == 3:
                 row_num += 1
