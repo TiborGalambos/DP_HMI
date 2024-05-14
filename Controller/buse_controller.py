@@ -35,7 +35,6 @@ class BuseController:
             if cls.running.is_set():
                 try:
 
-
                     try:
                         # upper part
                         message = cls.upper_command(destination)
@@ -126,6 +125,11 @@ class BuseController:
 
         message = f'aA1 \x0A\x1Bx\x1Bd\x10\x1Bh\x19\x1Bt\x11{unidecode(stop)}\x0D'
         message = message.encode()
+        message = cls.checksum(message)
+        return message
+
+    @classmethod
+    def checksum(cls, message):
         checksum = 0
         for byte in message:
             checksum ^= byte
@@ -140,13 +144,7 @@ class BuseController:
         message_upper = f"aA1 {unidecode(destination)}"
         message_upper += '\x0D'
         message = message_upper.encode()
-        checksum = 0
-        for byte in message:
-            checksum ^= byte
-        checksum = 0x7F & ~checksum
-        checksum_byte = chr(checksum).encode()
-        message += checksum_byte
-        message += b'\r'
+        message = cls.checksum(message)
         return message
 
     @classmethod
@@ -333,13 +331,7 @@ class BuseController:
         print(diagnostic_message)
 
         message = diagnostic_message.encode()
-        checksum = 0
-        for byte in message:
-            checksum ^= byte
-        checksum = 0x7F & ~checksum
-        checksum_byte = chr(checksum).encode()
-        message += checksum_byte
-        message += b'\r'
+        message = cls.checksum(message)
         print(message)
         try:
             cls.ser.write(message)

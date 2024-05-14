@@ -17,25 +17,12 @@ class SubPage4(ctk.CTkFrame):
         self.diagnostics_container.grid(row=0, column=0, sticky="news", padx=20, pady=20)
         for i in range (3):
             self.diagnostics_container.grid_columnconfigure(i, weight=1)
-        # self.diagnostics_container.grid_columnconfigure(0, weight=1)
-        # self.diagnostics_container.grid_columnconfigure(1, weight=1)
-        # self.diagnostics_container.grid_columnconfigure(2, weight=1)
 
-        for i in range(8):
+        for i in range(9):
             self.diagnostics_container.grid_rowconfigure(i, weight=0)
-
-        # self.diagnostics_container.grid_rowconfigure(0, weight=0)
-        # self.diagnostics_container.grid_rowconfigure(1, weight=0)
-        # self.diagnostics_container.grid_rowconfigure(2, weight=0)
-        # self.diagnostics_container.grid_rowconfigure(3, weight=0)
-        # self.diagnostics_container.grid_rowconfigure(4, weight=0)
-        # self.diagnostics_container.grid_rowconfigure(5, weight=0)
-        # self.diagnostics_container.grid_rowconfigure(6, weight=0)
-        # self.diagnostics_container.grid_rowconfigure(7, weight=0)
 
         self.diag_start_buttons()
 
-        # self.diagnostics_container.grid_rowconfigure(8, weight=0)
 
         self.server_diag()
 

@@ -231,6 +231,15 @@ class AesysController:
         cls.send_udp_packet(cls.panel_ip, cls.panel_port, xml_command, timeout=1)
 
     @classmethod
+    def start_display_emergency_message(cls, message):
+        cls.shutdown()
+        cls.stop_display()
+
+        xml_command = cls.build_one_row_xml_command(message, priority='1')
+        print("xml command:", xml_command)
+        cls.send_udp_packet(cls.panel_ip, cls.panel_port, xml_command, timeout=1)
+
+    @classmethod
     def reset(cls):
         cls.shutdown()
         cls.stop_display()

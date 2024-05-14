@@ -76,7 +76,7 @@ class AppMainLayout(ctk.CTk, PageController):
         self.state('zoomed')
 
 
-    # development on two monitor setup, this method ensures that GUI will be opened on the second monitor
+    # development on two monitor setup: this method ensures that GUI will be opened on the second monitor if connected
     def open_fullscreen_on_second_monitor(self):
         monitors = get_monitors()
 
@@ -85,7 +85,7 @@ class AppMainLayout(ctk.CTk, PageController):
             self.geometry(f"{second_monitor.width}x{second_monitor.height}+{second_monitor.x}+{second_monitor.y}")
             print(f"{second_monitor.width}x{second_monitor.height}")
         else:
-            print("Only one monitor detected. Opening fullscreen on the primary monitor.")
+            print("Only 1 monitor detected")
             self.attributes("-fullscreen", True)
 
 

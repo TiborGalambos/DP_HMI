@@ -8,7 +8,6 @@ from Managers.DatabaseManager import DatabaseManager
 # the server running on the controller to manage and control displayed text on the panels
 class CommunicationManager:
     _instance = None
-
     @classmethod
     def get_instance(cls):
         if cls._instance is None:
@@ -59,17 +58,19 @@ class CommunicationManager:
             "com_port": results[1]
         }
 
+        print('sending disp:', display_1, display_2)
+
         self.use_display_1 = display_1
         self.use_display_2 = display_2
 
         response = requests.post(url, json=payload)
         print(response.json())
 
-    # def send_emergency_message(self, message):
-    #     url = 'http://127.0.0.1:5555/emergency'
-    #     payload = {"message": message}
-    #     response = requests.post(url, json=payload)
-    #     print(response.json())
+    def send_emergency_message(self, message):
+        url = 'http://127.0.0.1:5555/emergency'
+        payload = {"message": message}
+        response = requests.post(url, json=payload)
+        print(response.json())
 
 
     # method for setting basic text messages that will be displayed on the panels

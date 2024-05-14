@@ -80,7 +80,7 @@ class SubPage3(ctk.CTkFrame):
 
         button_text = self.selected_button[1]
         com_man = CommunicationManager.get_instance()
-        com_man.send_basic_message(button_text)
+        com_man.send_emergency_message(button_text)
 
     def reset_selection(self):
         if self.selected_button is not None:

@@ -27,20 +27,31 @@ class Controller:
         destination_station = data.get('destination_station')
         train_state = data.get('state')
         train_delay = data.get('delay')
+        cls.display1 = data.get('display_1')
+        cls.display2 = data.get('display_2')
 
         print(train_state)
 
         if train_state == "before_station":
-            buse.start_display_before_station(destination_station, cls.delay_between_updates)
-            aesys.start_display_before_station(destination_station, cls.speed, cls.brightness)
+            if cls.display1:
+                aesys.start_display_before_station(destination_station, cls.speed, cls.brightness)
+            if cls.display2:
+                buse.start_display_before_station(destination_station, cls.delay_between_updates)
+
 
         if train_state == "in_station":
-            buse.start_display_in_station(routeID, destination_station, remaining_stations, train_delay, cls.delay_between_updates)
-            aesys.start_display_in_station(routeID, destination_station, remaining_stations, train_delay, cls.speed, cls.brightness)
+            if cls.display1:
+                aesys.start_display_in_station(routeID, destination_station, remaining_stations, train_delay, cls.speed, cls.brightness)
+            if cls.display2:
+                buse.start_display_in_station(routeID, destination_station, remaining_stations, train_delay, cls.delay_between_updates)
+
 
         if train_state == "after_station":
-            buse.start_display_after_station(routeID, destination_station, cls.delay_between_updates)
-            aesys.start_display_after_station(routeID, destination_station, cls.speed, cls.brightness)
+            if cls.display1:
+                aesys.start_display_after_station(routeID, destination_station, cls.speed, cls.brightness)
+            if cls.display2:
+                buse.start_display_after_station(routeID, destination_station, cls.delay_between_updates)
+
 
     @classmethod
     @app.task
@@ -75,6 +86,12 @@ class Controller:
     def display_message(cls, message):
         buse.start_display_simple_message(message, cls.delay_between_updates)
         aesys.start_display_simple_message(message)
+
+    @classmethod
+    @app.task
+    def display_emergency(cls, message):
+        buse.start_display_simple_message(message, cls.delay_between_updates)
+        aesys.start_display_emergency_message(message)
 
 
     @classmethod
