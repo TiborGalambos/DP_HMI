@@ -53,7 +53,8 @@ def validate_json(schema):
             try:
                 validate(instance=request.json, schema=schema)
             except ValidationError as e:
-                return jsonify({"status": "error", "message": str(e)}), 400
+                error_message = e.message
+                return jsonify({"status": "error", "message": f"Validation error: {error_message}"}), 400
             return f(*args, **kwargs)
         decorated_function.__name__ = f.__name__
         return decorated_function
