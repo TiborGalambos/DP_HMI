@@ -43,6 +43,7 @@ class AppMainLayout(ctk.CTk, PageController):
         self.title('HMI')
         communication = CommunicationManager.get_instance()
         try:
+            communication.send_settings()
             communication.reset_message()
         except:
             pass

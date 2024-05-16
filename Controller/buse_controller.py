@@ -15,21 +15,27 @@ class BuseController:
     ser = None
     _instance = None
     com_port = "COM10"
+    demo = False
 
     def __new__(cls):
         if cls._instance is None:
+            cls.demo = False
             cls._instance = super(BuseController, cls).__new__(cls)
             cls.command_queue = queue.Queue()
-            cls.ser = serial.Serial(port=cls.com_port, baudrate=1200, bytesize=serial.SEVENBITS,
+            try:
+                cls.ser = serial.Serial(port=cls.com_port, baudrate=1200, bytesize=serial.SEVENBITS,
                                                 parity=serial.PARITY_EVEN,
                                                 stopbits=serial.STOPBITS_TWO, timeout=3)
+            except:
+                cls.demo = True
             cls.running = threading.Event()
             cls.stop_thread = threading.Event()
             cls.thread = None
+
         return cls._instance
 
     @classmethod
-    def __serial_comm_thread_in_station(cls, train_number, destination, remaining_train_stops, train_delay, delay_between_displays):
+    def __serial_comm_thread_in_station(cls, train_number, destination, remaining_train_stops, train_delay, delay_between_displays, show_delay):
         while not cls.stop_thread.is_set():
 
             if cls.running.is_set():
@@ -39,9 +45,11 @@ class BuseController:
                         # upper part
                         message = cls.upper_command(destination)
                         print(message)
-                        # cls.ser.write(message)
+                        if not cls.demo:
+                            cls.ser.write(message)
                         time.sleep(1)
-                        # cls.print_response()
+                        if not cls.demo:
+                            cls.print_response()
 
                         if cls.stop_thread.is_set():
                             return
@@ -51,52 +59,61 @@ class BuseController:
                             print("1 -> remaining stops from the cycle:", stop)
                             message = cls.lower_command('cez ' + stop)
                             print(message)
-                            # cls.ser.write(message)
+                            if not cls.demo:
+                                cls.ser.write(message)
                             time.sleep(delay_between_displays)
-                            # cls.print_response()
+                            if not cls.demo:
+                                cls.print_response()
                             if cls.stop_thread.is_set():
                                 return
 
                     except serial.SerialException as e:
                         print("Demo mode or serial port not connected. Error: ", e)
 
+                    if show_delay:
+                        try:
+                            # upper part
+                            message = cls.upper_command('Meskanie')
+                            print(message)
+                            if not cls.demo:
+                                cls.ser.write(message)
+                            time.sleep(1)
+                            if not cls.demo:
+                                cls.print_response()
 
-                    try:
-                        # upper part
-                        message = cls.upper_command('Meskanie')
-                        print(message)
-                        # cls.ser.write(message)
-                        time.sleep(1)
-                        # cls.print_response()
+                            message = cls.lower_command(str(train_delay) + " min.")
+                            print("2 -> train delay:", train_delay, " min")
+                            print(message)
+                            if not cls.demo:
+                                cls.ser.write(message)
+                            time.sleep(delay_between_displays)
+                            if not cls.demo:
+                                cls.print_response()
 
-                        message = cls.lower_command(str(train_delay) + " min.")
-                        print("2 -> train delay:", train_delay, " min")
-                        print(message)
-                        # cls.ser.write(message)
-                        time.sleep(delay_between_displays)
-                        # cls.print_response()
+                            if cls.stop_thread.is_set():
+                                return
 
-                        if cls.stop_thread.is_set():
-                            return
-
-                    except serial.SerialException as e:
-                        print("Demo mode or serial port not connected. Error: ", e)
+                        except serial.SerialException as e:
+                            print("Demo mode or serial port not connected. Error: ", e)
 
 
                     try:
                         # upper part
                         message = cls.upper_command(destination)
                         print(message)
-                        # cls.ser.write(message)
+                        if not cls.demo:
+                            cls.ser.write(message)
                         time.sleep(1)
-                        # cls.print_response()
+                        if not cls.demo:
+                            cls.print_response()
 
                         message = cls.lower_command(train_number)
-                        print("3 -> train delay:", train_delay)
                         print(message)
-                        # cls.ser.write(message)
+                        if not cls.demo:
+                            cls.ser.write(message)
                         time.sleep(delay_between_displays)
-                        # cls.print_response()
+                        if not cls.demo:
+                            cls.print_response()
 
                         if cls.stop_thread.is_set():
                             return
@@ -158,15 +175,19 @@ class BuseController:
                         # upper part
                         message = cls.upper_command('smer')
                         print(message)
-                        # cls.ser.write(message)
+                        if not cls.demo:
+                            cls.ser.write(message)
                         time.sleep(1)
-                        # cls.print_response()
+                        if not cls.demo:
+                            cls.print_response()
 
                         message = cls.lower_command(destination)
                         print(message)
-                        # cls.ser.write(message)
+                        if not cls.demo:
+                            cls.ser.write(message)
                         time.sleep(delay_between_displays)
-                        # cls.print_response()
+                        if not cls.demo:
+                            cls.print_response()
 
                         if cls.stop_thread.is_set():
                             return
@@ -174,15 +195,19 @@ class BuseController:
                         # upper part
                         message = cls.upper_command(destination)
                         print(message)
-                        # cls.ser.write(message)
+                        if not cls.demo:
+                            cls.ser.write(message)
                         time.sleep(1)
-                        # cls.print_response()
+                        if not cls.demo:
+                            cls.print_response()
 
                         message = cls.lower_command(train_number)
                         print(message)
-                        # cls.ser.write(message)
+                        if not cls.demo:
+                            cls.ser.write(message)
                         time.sleep(delay_between_displays)
-                        # cls.print_response()
+                        if not cls.demo:
+                            cls.print_response()
 
                         if cls.stop_thread.is_set():
                             return
@@ -209,15 +234,19 @@ class BuseController:
                         # upper part
                         message1 = cls.upper_command('smer')
                         print(message1)
-                        # cls.ser.write(message)
+                        if not cls.demo:
+                            cls.ser.write(message1)
                         time.sleep(1)
-                        # cls.print_response()
+                        if not cls.demo:
+                            cls.print_response()
 
                         message2 = cls.lower_command(destination)
                         print(message2)
-                        # cls.ser.write(message)
+                        if not cls.demo:
+                            cls.ser.write(message2)
                         time.sleep(delay_between_displays)
-                        # cls.print_response()
+                        if not cls.demo:
+                            cls.print_response()
 
                         if cls.stop_thread.is_set():
                             return
@@ -244,15 +273,19 @@ class BuseController:
                         # upper part
                         message1 = cls.upper_command(message)
                         print(message1)
-                        # cls.ser.write(message)
+                        if not cls.demo:
+                            cls.ser.write(message1)
                         time.sleep(1)
-                        # cls.print_response()
+                        if not cls.demo:
+                            cls.print_response()
 
                         message2 = cls.lower_command(' ')
                         print(message2)
-                        # cls.ser.write(message)
+                        if not cls.demo:
+                            cls.ser.write(message2)
                         time.sleep(delay_between_displays)
-                        # cls.print_response()
+                        if not cls.demo:
+                            cls.print_response()
 
                         return
 
@@ -267,13 +300,13 @@ class BuseController:
                 time.sleep(0.1)
 
     @classmethod
-    def start_display_in_station(cls, train_number, destination, train_stops, train_delay, delay_between_displays):
+    def start_display_in_station(cls, train_number, destination, train_stops, train_delay, delay_between_displays, show_delay):
         cls.shutdown()
         cls.stop_display()
         cls.running.set()
         cls.stop_thread.clear()
         if cls.thread is None or not cls.thread.is_alive():
-            cls.thread = threading.Thread(target=cls.__serial_comm_thread_in_station, args=(train_number, destination, train_stops, train_delay, delay_between_displays))
+            cls.thread = threading.Thread(target=cls.__serial_comm_thread_in_station, args=(train_number, destination, train_stops, train_delay, delay_between_displays, show_delay))
             cls.thread.start()
 
     @classmethod
@@ -323,6 +356,13 @@ class BuseController:
     @classmethod
     def set_com_port(cls, com_port):
         cls.com_port = com_port
+        try:
+            cls.ser = serial.Serial(port=cls.com_port, baudrate=1200, bytesize=serial.SEVENBITS,
+                                parity=serial.PARITY_EVEN,
+                                stopbits=serial.STOPBITS_TWO, timeout=3)
+            cls.demo = False
+        except:
+            cls.demo = True
 
     @classmethod
     def test_connectivity(cls):

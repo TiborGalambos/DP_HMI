@@ -25,7 +25,7 @@ class AesysController:
         return cls._instance
 
     @classmethod
-    def __thread_in_station(cls, train_number, destination_station, remaining_stations, train_delay, speed="4", brightness="0"):
+    def __thread_in_station(cls, train_number, destination_station, remaining_stations, train_delay, speed="4", brightness="0", show_delay = True):
         while not cls.stop_thread.is_set():
 
             if cls.running.is_set():
@@ -43,19 +43,19 @@ class AesysController:
                     # print("xml command:", xml_command)
                     cls.send_udp_packet(cls.panel_ip, cls.panel_port, xml_command, timeout=1)
 
+                    if show_delay:
+                        message_row1 = "Meškanie"
+                        message_row2 = str(train_delay) + " min."
 
-                    message_row1 = "Meškanie"
-                    message_row2 = str(train_delay) + " min."
-
-                    xml_command = cls.build_two_row_xml_command(message_row1=message_row1,
-                                                                message_row2=message_row2,
-                                                                scroll_speed=speed,
-                                                                update_visualization_mode='WaitScrolling',
-                                                                bright=brightness,
-                                                                priority='3',
-                                                                timeout='2')
-                    # print("xml command:", xml_command)
-                    cls.send_udp_packet(cls.panel_ip, cls.panel_port, xml_command, timeout=1)
+                        xml_command = cls.build_two_row_xml_command(message_row1=message_row1,
+                                                                    message_row2=message_row2,
+                                                                    scroll_speed=speed,
+                                                                    update_visualization_mode='WaitScrolling',
+                                                                    bright=brightness,
+                                                                    priority='3',
+                                                                    timeout='2')
+                        # print("xml command:", xml_command)
+                        cls.send_udp_packet(cls.panel_ip, cls.panel_port, xml_command, timeout=1)
 
                     message_row1 = str(destination_station)
                     message_row2 = str(train_number)
@@ -189,14 +189,14 @@ class AesysController:
         cls.send_udp_packet(cls.panel_ip, cls.panel_port, xml_command, timeout=1)
 
     @classmethod
-    def start_display_in_station(cls, train_number, destination_station, remaining_stations, train_delay, speed, brightness):
+    def start_display_in_station(cls, train_number, destination_station, remaining_stations, train_delay, speed, brightness, show_delay):
         cls.shutdown()
         cls.stop_display()
         cls.running.set()
         cls.stop_thread.clear()
         if cls.thread is None or not cls.thread.is_alive():
             cls.thread = threading.Thread(target=cls.__thread_in_station, args=(
-            train_number, destination_station, remaining_stations, train_delay, speed, brightness))
+            train_number, destination_station, remaining_stations, train_delay, speed, brightness, show_delay))
             cls.thread.start()
 
     @classmethod
@@ -276,7 +276,7 @@ class AesysController:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.settimeout(timeout)
             hex_command = command.encode()
-            print("hex comm", hex_command)
+            # print("hex comm", hex_command)
             sock.sendto(hex_command, (ip_address, port))
             try:
                 response, _ = sock.recvfrom(buffer_size)

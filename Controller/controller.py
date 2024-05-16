@@ -41,9 +41,9 @@ class Controller:
 
         if train_state == "in_station":
             if cls.display1:
-                aesys.start_display_in_station(routeID, destination_station, remaining_stations, train_delay, cls.speed, cls.brightness)
+                aesys.start_display_in_station(routeID, destination_station, remaining_stations, train_delay, cls.speed, cls.brightness, cls.show_delay)
             if cls.display2:
-                buse.start_display_in_station(routeID, destination_station, remaining_stations, train_delay, cls.delay_between_updates)
+                buse.start_display_in_station(routeID, destination_station, remaining_stations, train_delay, cls.delay_between_updates, cls.show_delay)
 
 
         if train_state == "after_station":
@@ -69,7 +69,7 @@ class Controller:
     def set_settings(cls, display_1, display2, com_port, speed, brightness, show_delay):
         cls.display1 = display_1
         cls.display2 = display2
-        cls.com_port = com_port
+        cls.com_port = f"COM{com_port}"
         cls.speed = str(speed)
         cls.delay_between_updates = 6 - speed
         cls.brightness = str(brightness)

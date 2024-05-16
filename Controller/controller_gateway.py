@@ -33,7 +33,7 @@ settings_schema = {
         "show_delay": {"type": "boolean"},
         "brightness": {"type": "number"},
         "speed": {"type": "number"},
-        "com_port": {"type": "string"}
+        "com_port": {"type": "number"}
     },
     "required": ["display_1", "display_2", "show_delay", "brightness", "speed", "com_port"]
 }

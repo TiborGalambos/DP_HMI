@@ -45,10 +45,22 @@ class SubPage2(ctk.CTkFrame):
         self.map_container.grid(row=0, column=0, sticky="nwse", pady=20, padx=20)
         self.trip_stops_container = ctk.CTkFrame(self, fg_color="transparent")
         self.trip_stops_container.grid(row=0, column=1, sticky="nswe", padx=20, pady=20)
-        base_path = os.path.dirname(os.path.abspath(__file__))
-        self.database_path = os.path.join(base_path, "offline_map.db")
+
+        if hasattr(sys, '_MEIPASS'):
+            base_path = os.path.join(sys._MEIPASS, "Pages")
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+
+        bundled_path = os.path.join(base_path, "offline_map.db")
+        working_dir = os.path.join(os.path.dirname(sys.executable), "Pages", "offline_map.db")
+
+        if os.path.exists(bundled_path):
+            self.database_path = bundled_path
+        else:
+            self.database_path = working_dir
 
         print("path:", self.database_path)
+
         self.map_widget = tkintermapview.TkinterMapView(self.map_container, width=1200, height=1190, corner_radius=30,
                                                         use_database_only=True,
                                                         database_path=self.database_path)

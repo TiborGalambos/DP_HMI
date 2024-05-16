@@ -45,7 +45,7 @@ class CommunicationManager:
 
 
     # method for sending settings
-    def send_settings(self, display_1, display_2, show_delay):
+    def send_settings(self, display_1=True, display_2=True, show_delay=True):
         url = 'http://127.0.0.1:5555/settings'
         db_manager = DatabaseManager()
         results = db_manager.get_settings()[0]
@@ -67,7 +67,8 @@ class CommunicationManager:
         print(response.json())
 
     def send_emergency_message(self, message):
-        url = 'http://127.0.0.1:5555/emergency'
+        self.send_settings()
+        url = 'http://127.0.0.1:5555/emergency_message'
         payload = {"message": message}
         response = requests.post(url, json=payload)
         print(response.json())
